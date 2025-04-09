@@ -1,0 +1,203 @@
+.editor-container {
+    max-width: 100%;
+    background-color: white;
+    border-radius: 10px;
+    border: 1px solid #ccc;  
+    display: flex;
+  }
+  .dropdown {
+    position: relative;
+    display: inline-block;
+  }
+  
+  .dropbtn {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 10px 15px;
+  }
+  
+  .dropdown-content {
+    display: block;
+    position: absolute;
+    top: 100%; /* directly under button */
+    left: 0;
+    background-color: black;
+    min-width: 120px;
+    border: 1px solid #ccc;
+    z-index: 1001;
+    border-radius: 4px;
+    padding: 5px;
+  }
+  
+  .dropdown-content table {
+    width: 100%;
+    border-collapse: collapse;
+  }
+  
+  .dropdown-content td button {
+    width: 100%;
+    padding: 8px;
+    text-align: left;
+    border: none;
+    background: none;
+    cursor: pointer;
+  }
+  
+  .dropdown-content td button:hover {
+    background-color: white;
+  }
+  .top-bar {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: auto;
+    background-color: #333; /* Adjust as needed */
+    color: white;
+    display: flex;
+    gap: 0px;
+    z-index: 1000; /* Ensures it's above other elements */
+}
+.top-bar button {
+    background: none;
+    border: none;
+    color: white;
+    font-size: 16px;
+    cursor: pointer;
+    padding: 10px 15px;
+}
+  
+  .editor-content {
+    flex-grow: 1; /* Ensures it takes up remaining space */
+    min-height: 600px;
+    width: 100%;
+    padding: 10px;
+    font-size: 16px;
+    border: 1px solid #ccc;
+    border-radius: 0px;
+    white-space: normal; /* Allows text to wrap */
+    word-wrap: break-word; /* Ensures long words break and wrap to the next line */
+    overflow-wrap: break-word; /* Ensures long words break and wrap to the next line */
+    width: 100%; /* Ensures the editor content takes the full width of the container */
+    box-sizing: border-box;
+    overflow-x: auto;
+    margin-top: 40px; /* Avoid overlap with the top bar */
+
+}
+  
+  .toolbar {
+    width: 70px; /* Adjust width as needed */
+    height: 100vh; /* Full height */
+    display: flex;
+    padding: 5px;
+    gap: 20px;
+    border: 1px solid #ccc;
+    border-radius: 0px;
+    justify-content: center; /* Align buttons to the top */
+    flex-direction: column; /* Stack buttons vertically */
+    align-self: stretch; /* Make it extend fully */
+    margin: 0; /* Remove auto margin */
+    background-color: grey;
+    
+  }
+  
+  .toolbar-button {
+    padding: 8px 12px;
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    background-color: #f0f0f0;
+    transition: background-color 0.2s ease;
+  }
+  .toolbar input[type = "color"]{
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+    width: 55px ;
+    height: 50px;
+  }
+  .toolbar select[type = "font"]{
+    font-size: 16px;
+    cursor: pointer;
+    border: 1px solid #ccc;
+    border-radius: 5px;
+    transition: background-color 0.2s ease;
+    height: auto;
+  }
+  
+  .toolbar-button:hover {
+    background-color: #e0e0e0;
+  }
+  
+  .ProseMirror {
+    min-height: 200px;
+    height: 100%;
+    width: 100%;
+    padding: 0px;
+    font-family: Arial, sans-serif;
+    font-size: 16px;
+  }
+  
+  .ProseMirror p {
+    margin: 0px 0;
+  }
+  
+/* dark mode */
+
+.dark-mode {
+  background-color: #1e1e1e;
+  color: white;
+}
+
+.dark-mode .top-bar {
+  background-color: #111;
+  color: white;
+}
+
+.dark-mode .toolbar {
+  background-color: #333;
+}
+
+.dark-mode .toolbar-button {
+  background-color: #444;
+  color: white;
+}
+
+.dark-mode .toolbar-button:hover {
+  background-color: #555;
+}
+
+.dark-mode .editor-content {
+  background-color: #2c2c2c;
+  color: white;
+}
+
+.dark-mode .ProseMirror {
+  color: white;
+}
+/* tabs*/
+.tabs {
+  margin-top: 60px; /* Add space to prevent overlap with the fixed top bar */
+  padding: 10px;
+  background-color: #eee;
+  display: flex;
+  justify-content: flex-start;
+  gap: 10px;
+}
+
+.tabs button {
+  padding: 10px;
+  cursor: pointer;
+  background-color: #eee;
+}
+
+.tabs button.active-tab {
+  background-color: #ccc;
+  font-weight: bold;
+}
