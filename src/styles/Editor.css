@@ -2,7 +2,6 @@
     max-width: 100%;
     background-color: white;
     border-radius: 10px;
-    border: 1px solid #ccc;  
     display: flex;
   }
   .dropdown {
@@ -84,7 +83,7 @@
     width: 100%; /* Ensures the editor content takes the full width of the container */
     box-sizing: border-box;
     overflow-x: auto;
-    margin-top: 40px; /* Avoid overlap with the top bar */
+    margin-top: 80px; /* Avoid overlap with the top bar */
 
 }
   
@@ -94,7 +93,7 @@
     display: flex;
     padding: 5px;
     gap: 20px;
-    border: 1px solid #ccc;
+    border-right: 1px solid #ccc;
     border-radius: 0px;
     justify-content: center; /* Align buttons to the top */
     flex-direction: column; /* Stack buttons vertically */
@@ -181,23 +180,41 @@
 .dark-mode .ProseMirror {
   color: white;
 }
-/* tabs*/
-.tabs {
-  margin-top: 60px; /* Add space to prevent overlap with the fixed top bar */
-  padding: 10px;
-  background-color: #eee;
+.react-tabs__tab--selected {
+  border-bottom: 2px solid white;
+  color: black;
+  background-color: white !important;
+  border-top: 3px solid blue;
+  
+}
+
+.dark-mode .react-tabs__tab--selected {
+  background-color: #2c2c2c !important;
+  color: white;
+  border-bottom: none !important ;
+}
+.note-tabs{
+  position: fixed;
+  top: 44px; /* Adjust this value based on the height of your nav bar */
+  left: 70px;
+  width: 100%;
+  height: auto;
+  background-color: white;
+  color: black;
   display: flex;
+  gap: 0px;
+  z-index: 1000;
+  border-bottom: 2px solid black;
   justify-content: flex-start;
-  gap: 10px;
+  
 }
-
-.tabs button {
-  padding: 10px;
-  cursor: pointer;
-  background-color: #eee;
+.note-tabs .react-tabs__tab{
+  background-color: lightgrey;
+  border-radius: 0;
+  padding: px 30px; /* wider horizontally */
+  min-width: 150px;    /* optional fixed minimum width */
+  text-align: center; 
 }
-
-.tabs button.active-tab {
-  background-color: #ccc;
-  font-weight: bold;
+.dark-mode .note-tabs{
+  background-color: grey;
 }
