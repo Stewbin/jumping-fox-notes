@@ -17,6 +17,7 @@ export default function NoteCard({ title, id, tags, lastModified }) {
       className="card w-100"
       onClick={() => console.log("I'm being clicked!!")}
     >
+      <Link to={`/Editor/${id}`} className="stretched-link"></Link>
       <img
         src={error404}
         alt="Preview of note"
@@ -30,12 +31,11 @@ export default function NoteCard({ title, id, tags, lastModified }) {
       </div>
       <ul className="list-group list-group-flush">
         <li key={0} className="list-group-item">
-          {tags.map((tag) => (
-            <span className="badge rounded-pill bg-info">{tag}</span>
+          {tags.map((tag,i) => (
+            <span key = {i} className="badge rounded-pill bg-info">{tag}</span>
           ))}
         </li>
       </ul>
-      <Link to={{ pathname: "/" }} className="stretched-link"></Link>
     </div>
   );
 }
