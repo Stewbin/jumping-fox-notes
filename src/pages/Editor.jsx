@@ -12,12 +12,21 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from '@tiptap/extension-font-family';
 import Image from '@tiptap/extension-image';
 import { Tab, Tabs, TabList, TabPanel } from 'react-tabs';
+import { Link,useParams,useNavigate } from 'react-router-dom';
 import 'react-tabs/style/react-tabs.css'; // Import default styling
 
 import "../styles/Editor.css";
 
 const Editor = () => {
+  const { id } = useParams();
+  const navigate = useNavigate();
+
   const [darkMode, setDarkMode] = useState(false);
+  const [note, setNote] = useState(null);
+
+  const [openTabs, setOpenTabs] = useState([]);
+const [currentTabIndex, setCurrentTabIndex] = useState(0);
+
 
 const toggleDarkMode = () => {
   setDarkMode(prev => !prev);
@@ -39,8 +48,18 @@ const toggleDarkMode = () => {
         types: ['textStyle'],
       }),
     ],
-    content: '<p>content goes here</p>'
+    content: "",
   });
+  const handleDeleteNote = () => {
+    const confirmDelete = window.confirm("Are you sure you want to delete this note?");
+    if (!confirmDelete) return;
+  
+    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+    const updatedNotes = savedNotes.filter((n) => String(n.id) !== String(id));
+  
+    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    navigate("/home");
+  };
  
 
   const [isFileMenuOpen, setFileMenuOpen] = useState(false);
@@ -49,7 +68,61 @@ const toggleDarkMode = () => {
   const toggleFileMenu = () => {
     setFileMenuOpen(prev => !prev);
   };
+  useEffect(() => {
+    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+    const currentNote = savedNotes.find((n) => String(n.id) === String(id));
+  
+    if (!currentNote) {
+      alert("Note not found");
+      navigate("/home");
+      return;
+    }
+  
+    setNote(currentNote);
+    setOpenTabs((prevTabs) => {
+      const alreadyOpen = prevTabs.some((tab) => tab.id === currentNote.id);
+      if (!alreadyOpen) {
+        return [...prevTabs, currentNote];
+      }
+      return prevTabs;
+    });
+    // Set active tab
+  const tabIndex = openTabs.findIndex((tab) => tab.id === currentNote.id);
+  setCurrentTabIndex(tabIndex === -1 ? openTabs.length : tabIndex);
+    if (editor) {
+      editor.commands.setContent(currentNote.content || "");
+    }
+  }, [id, editor, navigate]);
+  
+  useEffect(() => {
+    if (!editor || !note) return;
+  
+    const updateContent = () => {
+      const updatedContent = editor.getHTML();
+      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+      const updatedNotes = savedNotes.map((n) =>
+        String(n.id) === String(id)
+          ? { ...n, content: updatedContent, lastModified: new Date().toISOString() }
+          : n
+      );
+  
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    };
+  
+    editor.on("update", updateContent);
+    return () => editor.off("update", updateContent);
+  }, [editor, note, id]);
 
+  // Handle click outside for file dropdown
+  useEffect(() => {
+    const handleClickOutside = (event) => {
+      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
+        setFileMenuOpen(false);
+      }
+    };
+    document.addEventListener('mousedown', handleClickOutside);
+    return () => document.removeEventListener('mousedown', handleClickOutside);
+  }, []);
   useEffect(() => {
     const handleClickOutside = (event) => {
       if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
@@ -94,7 +167,12 @@ const toggleDarkMode = () => {
   return (
 <div className={`editor-container ${darkMode ? 'dark-mode' : ''}`}> 
       {/* Top Navigation Bar */}
+      
       <nav className="top-bar">
+        <button classname="home-btn">
+        <Link to="/home" className="nav-link">Home</Link>
+        </button>
+     
   <div className="dropdown"ref={dropdownRef}>
     <button className="dropbtn" onClick={toggleFileMenu}>File</button>
     {isFileMenuOpen && (
@@ -104,7 +182,7 @@ const toggleDarkMode = () => {
             <tr><td><button>New</button></td></tr>
             <tr><td><button>Open</button></td></tr>
             <tr><td><button>Save</button></td></tr>
-            <tr><td><button>Export</button></td></tr>
+            <tr><td><button onClick={handleDeleteNote} style={{ color: 'red' }}>Delete Note</button></td></tr>
           </tbody>
         </table>
       </div>
@@ -154,9 +232,29 @@ const toggleDarkMode = () => {
     </select>
     <button onClick={addImage}>Set image</button>
       </div>
+      <Tabs className="note-tabs" selectedIndex={currentTabIndex} onSelect={(index) => {
+  setCurrentTabIndex(index);
+  const note = openTabs[index];
+  navigate(`/editor/${note.id}`);
+}}>
+  <TabList className="note-tabs">
+    {openTabs.map((tab) => (
+      <Tab key={tab.id}>
+        {tab.name}
+      </Tab>
+    ))}
+  </TabList>
+
+  {openTabs.map((tab) => (
+    <TabPanel key={tab.id}>
+      <EditorContent editor={editor} />
+    </TabPanel>
+  ))}
+</Tabs>
       <div className="editor-content">
       <EditorContent editor={editor} />
     </div>
+ 
     </div>
   );
 };

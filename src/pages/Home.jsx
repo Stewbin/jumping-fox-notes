@@ -1,4 +1,4 @@
-import React, { useState } from "react";
+import React, { useState, useEffect} from "react";
 import {
   FaFileMedical,
   FaFolderPlus,
@@ -8,23 +8,34 @@ import fox from "../fox.svg";
 import { RxAvatar } from "react-icons/rx";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
+import { useNavigate } from "react-router-dom";
 
 export default function Home() {
   // TODO: Get notes from local storage / DB
-  const [notes] = useState([
-    {
-      id: "1",
-      name: "note1",
-      content: ["txt1", "img1"],
-      tags: ["biology", "chemistry"],
-    },
-    {
-      id: "2",
-      name: "note2",
-      content: ["txt2", "img2"],
-      tags: ["physics", "chemistry"],
-    },
-  ]);
+  const navigate = useNavigate();
+  const [notes, setNotes] = useState([]);
+
+  useEffect(() => {
+    const saved = localStorage.getItem("notes");
+    if (saved) {
+      setNotes(JSON.parse(saved));
+    }
+  }, []);
+  const handleNewNote = () => {
+    const name = prompt("Enter note name:");
+    if (!name) return;
+
+    const newNote = {
+      id: Date.now().toString(), // Simple timestamp ID
+      name,
+      content: "",
+      tags: [],
+    };
+
+    const updatedNotes = [...notes, newNote];
+    setNotes(updatedNotes);
+    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+  };
 
   return (
     <>
@@ -44,7 +55,7 @@ export default function Home() {
           <div className="collapse navbar-collapse" id="navbarContent">
             <ul className="navbar-nav me-auto mb-2 mb-lg-0">
               <li key={1} className="nav-item">
-                <button className="btn invisi-btn">
+                <button className="btn invisi-btn" onClick={handleNewNote}>
                   <FaFileMedical />
                   New Note
                 </button>
@@ -85,6 +96,7 @@ export default function Home() {
           {notes.map((note) => (
             <div key={note.id} className="col-lg-2 col-md-3 col-sm-6">
               <NoteCard
+                id={note.id}
                 title={note.name}
                 tags={note.tags}
                 lastModified={new Date()}
