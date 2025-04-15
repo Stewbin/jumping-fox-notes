@@ -1,4 +1,4 @@
-import React, { useState, useEffect} from "react";
+import React, { useState, useEffect } from "react";
 import {
   FaFileMedical,
   FaFolderPlus,
@@ -8,11 +8,10 @@ import fox from "../fox.svg";
 import { RxAvatar } from "react-icons/rx";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
-import { useNavigate } from "react-router-dom";
+import { setNote, getNote } from "../lib/firestore";
 
 export default function Home() {
   // TODO: Get notes from local storage / DB
-  const navigate = useNavigate();
   const [notes, setNotes] = useState([]);
 
   useEffect(() => {
