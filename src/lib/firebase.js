@@ -1,6 +1,10 @@
 // Import all required Firebase services
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+} from "firebase/auth";
 import { getFirestore, doc, setDoc } from "firebase/firestore";
 
 // Your Firebase configuration
@@ -10,7 +14,7 @@ const firebaseConfig = {
   projectId: "jumping-fox-notes",
   storageBucket: "jumping-fox-notes.firebasestorage.app",
   messagingSenderId: "986976785621",
-  appId: "1:986976785621:web:a406d6801721cd2717fe5c"
+  appId: "1:986976785621:web:a406d6801721cd2717fe5c",
 };
 
 // Initialize Firebase
@@ -21,11 +25,11 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // Export everything your components need
-export { 
+export {
   auth,
   db,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   doc,
-  setDoc
+  setDoc,
 };
