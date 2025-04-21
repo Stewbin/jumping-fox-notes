@@ -2,9 +2,10 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.css';
+import { auth , signInWithEmailAndPassword} from '../lib/firebase';
 
 const Login = () => {
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
@@ -13,18 +14,11 @@ const Login = () => {
         event.preventDefault();
 
         try {
-            const response = await axios.get('http://localhost:9000/getUser', {
-                params: { username, password },
-            });
-
-            if (response.data) {
-                alert('Login Successful');
-                navigate('/home');  // Changed from '/login-successful' to '/home'
-            } else {
-                setError('Wrong Credentials');
-            }
+            await signInWithEmailAndPassword(auth, email, password);
+            alert('Login Successful');
+            navigate('/home');
         } catch (err) {
-            setError('Login Error');
+            setError('Wrong Credentials');
             console.error(err);
         }
     };
@@ -37,14 +31,14 @@ const Login = () => {
                     {error && <div className="alert alert-danger">{error}</div>}
                     <form onSubmit={handleLogin}>
                         <div className="mb-3">
-                            <label htmlFor="username" className="form-label">Username</label>
+                            <label htmlFor="email" className="form-label">Email</label>
                             <input
                                 type="text"
                                 className="form-control"
-                                id="username"
-                                placeholder="Enter Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                id="email"
+                                placeholder="Enter Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
                             />
                         </div>
                         <div className="mb-3">
