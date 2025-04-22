@@ -4,10 +4,14 @@ import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
 import { getNotebookContents } from "../lib/firestore";
 
+
 export default function Home() {
   const [path, setPath] = useState(["Root"]); // Array of path segments
   // TODO: Get notes from local storage / DB
   const [notes, setNotes] = useState([]);
+  const openNewTab = (note) => {
+    window.open(`/Editor/${note.id}`, "_blank");
+  };
 
   useEffect(() => {
     const saved = localStorage.getItem("notes");
@@ -19,6 +23,7 @@ export default function Home() {
     const name = prompt("Enter note name:");
     if (!name) return;
 
+    
     const newNote = {
       id: Date.now().toString(), // Simple timestamp ID
       name,
@@ -60,6 +65,7 @@ export default function Home() {
                 title={note.name}
                 tags={note.tags}
                 lastModified={new Date()}
+                onClick={() => openNewTab(note)}
               />
             </div>
           ))}
