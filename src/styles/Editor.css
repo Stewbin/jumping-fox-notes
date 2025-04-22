@@ -46,7 +46,7 @@
   }
   
   .dropdown-content td button:hover {
-    background-color: white;
+    background-color: lightgray;
   }
   .top-bar {
     position: fixed;
@@ -217,4 +217,38 @@
 }
 .dark-mode .note-tabs{
   background-color: grey;
+}
+.audio-stack {
+  margin-top: 20px;
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+}
+
+.audio-player {
+  display: flex;
+  align-items: center;
+  gap: 10px;
+}
+.open-dropdown{
+  position: absolute;
+  top: 40px; /* adjust based on your layout */
+  left: 120px; /* appear beside the File menu */
+  background: black;
+  border: 1px solid #ccc;
+  padding: 0.5rem;
+  z-index: 10;
+  border-radius: 4px;
+  box-shadow: 0 4px 6px rgba(0, 0, 0, 0.1);
+  min-width: 180px;
+}
+.note-item {
+  padding: 0.5rem;
+  cursor: pointer;
+  transition: background 0.2s;
+}
+
+.note-item:hover {
+
+  color: lightgrey;
 }
