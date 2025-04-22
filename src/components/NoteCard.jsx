@@ -13,10 +13,7 @@ import { Link } from "react-router-dom";
 export default function NoteCard({ title, id, tags, lastModified }) {
   // TODO: Change `tags` for `tagIDs`
   return (
-    <div
-      className="card w-100"
-      onClick={() => console.log("I'm being clicked!!")}
-    >
+    <div className="card w-100">
       <Link to={`/Editor/${id}`} className="stretched-link"></Link>
       <img
         src={error404}
@@ -31,8 +28,10 @@ export default function NoteCard({ title, id, tags, lastModified }) {
       </div>
       <ul className="list-group list-group-flush">
         <li key={0} className="list-group-item">
-          {tags.map((tag,i) => (
-            <span key = {i} className="badge rounded-pill bg-info">{tag}</span>
+          {tags.map((tag, i) => (
+            <span key={i} className="badge rounded-pill bg-info">
+              {tag}
+            </span>
           ))}
         </li>
       </ul>
