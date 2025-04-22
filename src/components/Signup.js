@@ -2,33 +2,41 @@ import React, { useState } from 'react';
 import axios from 'axios';
 import { useNavigate } from 'react-router-dom';
 import 'bootstrap/dist/css/bootstrap.css';
+import {auth, db, doc, setDoc,createUserWithEmailAndPassword } from '../lib/firebase';
 
 const Signup = () => {
     const [firstName, setFirstName] = useState('');
     const [lastName, setLastName] = useState('');
-    const [username, setUsername] = useState('');
+    const [email, setEmail] = useState(''); 
     const [password, setPassword] = useState('');
     const [error, setError] = useState('');
     const navigate = useNavigate();
+    
 
     const handleSignUp = async (event) => {
         event.preventDefault();
-
+        setError(''); 
+    
         try {
-            const response = await axios.post('http://localhost:9000/createUser', {
+        
+            const userCredential = await createUserWithEmailAndPassword(auth, email, password);
+            const user = userCredential.user;
+    
+            await setDoc(doc(db, "users", user.uid), {
                 firstName,
                 lastName,
-                username,
-                password,
+                email,
+                createdAt: new Date(),
             });
-
-            if (response.data) {
-                alert('Signup successful!');
-                navigate('/login');
-            }
+    
+            alert('Signup Successful!');
+            navigate('/login'); 
         } catch (err) {
-            setError('Error in Signing Up');
-            console.error(err);
+          
+            if (err.code !== 'auth/email-already-in-use') { 
+                setError(err.message || 'Signup failed. Please try again.');
+            }
+            console.error("Signup Error:", err);
         }
     };
 
@@ -62,14 +70,15 @@ const Signup = () => {
                             />
                         </div>
                         <div className="mb-3">
-                            <label htmlFor="username" className="form-label">Username</label>
+                            <label htmlFor="email" className="form-label">Email</label>
                             <input
-                                type="text"
+                                type="email"
                                 className="form-control"
-                                id="username"
-                                placeholder="Enter Username"
-                                value={username}
-                                onChange={(e) => setUsername(e.target.value)}
+                                id="email"
+                                placeholder="Enter Email"
+                                value={email}
+                                onChange={(e) => setEmail(e.target.value)}
+                                required
                             />
                         </div>
                         <div className="mb-3">
