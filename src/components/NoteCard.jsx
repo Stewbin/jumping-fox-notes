@@ -10,7 +10,7 @@ import { Link } from "react-router-dom";
  * @param {Date} lastModified - Date object of last modification
  * @returns {JSX.Element}
  */
-export default function NoteCard({ title, id, tags, lastModified }) {
+export default function NoteCard({ title, id, tags, timestamp }) {
   // TODO: Change `tags` for `tagIDs`
   return (
     <div
@@ -26,13 +26,15 @@ export default function NoteCard({ title, id, tags, lastModified }) {
       <div className="card-body">
         <h5 className="card-title">{title}</h5>
         <p className="card-text">
-          Last modified: {lastModified.toLocaleString()}
+          Created modified: {timestamp.toLocaleString()}
         </p>
       </div>
       <ul className="list-group list-group-flush">
         <li key={0} className="list-group-item">
-          {tags.map((tag,i) => (
-            <span key = {i} className="badge rounded-pill bg-info">{tag}</span>
+          {tags.map((tag, i) => (
+            <span key={i} className="badge rounded-pill bg-info">
+              {tag}
+            </span>
           ))}
         </li>
       </ul>
