@@ -1,7 +1,7 @@
 // Import all required Firebase services
 import { initializeApp } from "firebase/app";
 import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import { getFirestore, doc, setDoc, updateDoc, getDoc} from "firebase/firestore";
 
 // Your Firebase configuration
 const firebaseConfig = {
@@ -27,5 +27,7 @@ export {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   doc,
-  setDoc
+  setDoc,
+  getDoc,
+  updateDoc
 };
