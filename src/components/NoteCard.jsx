@@ -31,7 +31,7 @@ export default function NoteCard({ title, id, tags, timestamp }) {
       </div>
       <ul className="list-group list-group-flush">
         <li key={0} className="list-group-item">
-          {tags.map((tag, i) => (
+          {tags?.map((tag, i) => (
             <span key={i} className="badge rounded-pill bg-info">
               {tag}
             </span>

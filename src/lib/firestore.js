@@ -6,8 +6,8 @@ const notesRootPromise = new Promise((resolve, reject) => {
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (!user) {
       // reject(new Error("No user logged in."));
-      return;
       console.warn("No user logged in.");
+      return;
     }
     const ref = collection(db, "users", user.uid, "notesRoot");
     resolve(ref);
@@ -15,18 +15,8 @@ const notesRootPromise = new Promise((resolve, reject) => {
   });
 });
 
-/* Tentative Note 'Schema' */
-/* 
-{ 
-  name: string
-  content: JSON or String
-  tags: string[]
-  timestamp: Date
-}
-*/
-
 /**
- * Writes to the document at `/id`. If no document exists, one will be created.
+ * Writes to the document at `notesRoot/id`. If no document exists, one will be created.
  * If `id` is an empty string, then an ID will be auto-generated.
  * @param {string} id ID of Note
  * @param {Object} newNote `{ name: string, content: string, tags: string[], timestamp: Date }`
@@ -69,7 +59,11 @@ export async function pullNote(id) {
 export async function pullNotes() {
   try {
     const notesRoot = await notesRootPromise;
-    return getDocs(notesRoot).then((snapshot) => snapshot.docs);
+    return getDocs(notesRoot).then((snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      console.log(data);
+      return data;
+    });
   } catch (error) {
     console.warn(error);
     return [];

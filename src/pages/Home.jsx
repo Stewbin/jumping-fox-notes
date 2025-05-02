@@ -14,7 +14,7 @@ export default function Home() {
     // const saved = localStorage.getItem("notes");
     // setNotes(JSON.parse(saved));
     pullNotes()
-      .then((saved) => setNotes(JSON.parse(saved)))
+      .then((saved) => setNotes(saved))
       .catch((error) => console.error(error));
   }, []);
   const handleNewNote = () => {
@@ -28,7 +28,7 @@ export default function Home() {
       timestamp: new Date(),
     };
 
-    newNote["id"] = pushNote(newNote);
+    pushNote(newNote, "").then((id) => (newNote["id"] = id));
     const updatedNotes = [...notes, newNote];
     setNotes(updatedNotes);
     // localStorage.setItem("notes", JSON.stringify(updatedNotes));
