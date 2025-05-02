@@ -7,22 +7,24 @@ import getStroke from 'perfect-freehand';
 
 const generator = rough.generator();
 
-function CreateElement(id,x1,y1, x2, y2, type){
+function CreateElement(id,x1,y1, x2, y2, type,strokeSize){
 
     switch(type){
       case "line":
         case "rectangle":
           const roughElement = type ==="line"
-          ? generator.line(x1,y1,x2,y2)
-          : generator.rectangle(x1,y1,x2-x1,y2-y1);
-          return {id,x1,y1,x2,y2,type,roughElement};
+          ? generator.line(x1,y1,x2,y2,{strokeWidth: strokeSize})
+          : generator.rectangle(x1,y1,x2-x1,y2-y1,{strokeWidth: strokeSize});
+          return { id, x1, y1, x2, y2, type, roughElement, strokeWidth: strokeSize };
           case "pencil":
-          return{id,type,points:[{x: x1,y: y1}]};
+          return{id,type,points: [{ x: x1, y: y1 }], strokeWidth: strokeSize };
           default: 
             throw new Error(`Type not recognised:${type}`)
     }
 
 }
+
+
 const nearPoint = (x,y,x1,y1,name) =>{
   return Math.abs(x-x1) < 5 && Math.abs(y-y1) < 5 ? name: null;
 }
@@ -53,6 +55,7 @@ const distance = (a,b) => Math.sqrt(Math.pow(a.x-b.x, 2) + Math.pow(a.y-b.y, 2))
 
 const getElementAtPosition = (x,y,element)=>{
   return element
+  .filter(el => !el.erased)
   .map(element => ({...element, position: PositionWithinElement(x,y,element)}))
   .find(element => element.position != null);
 
@@ -110,7 +113,6 @@ const {x1,y1,x2,y2} = coordinates;
   }
 }
 
-
 const useHistory = initialState => {
   const [index,setIndex] = useState(0);
   const [history, setHistory] = useState([initialState]);
@@ -135,16 +137,19 @@ const useHistory = initialState => {
 
 };
 
-const drawElement = (roughCanvas, context, element) =>{
+const drawElement = (roughCanvas, context, element,size) =>{
   switch(element.type){
       case "line":
       case "rectangle":
-      roughCanvas.draw(element.roughElement)
+      roughCanvas.draw(element.roughElement,{size:element})
         break;
         case "pencil":
-          const stroke = getSvgPathFromStroke(getStroke(element.points))
+          const rawStroke = getStroke(element.points, { size:element.strokeWidth });
+          const stroke = getSvgPathFromStroke(rawStroke);
           context.fill(new Path2D(stroke))
           break;
+        case "eraser":
+          
         default: 
           throw new Error(`Type not recognised:${element.type}`)
           
@@ -167,11 +172,27 @@ const getSvgPathFromStroke = stroke => {
   return d.join(" ");
 };
 
+function shouldErase(element, x, y, radius = 2) {
+  if (element.type === "pencil") {
+    // any stroke point within radius
+    return element.points.some(p => 
+      Math.hypot(p.x - x, p.y - y) < radius
+    );
+  }
+  // for lines & rects, reuse PositionWithinElement:
+  return PositionWithinElement(x, y, element) === "inside";
+}
 
+function eraseAt(elements, x, y, radius) {
+  return elements.map(el =>
+    shouldErase(el, x, y, radius)
+      ? { ...el, erased: true }
+      : el
+  );
+}
 
 
 const adjustmentRequired = type => ['line', 'rectangle'].includes(type);
-
 
 
 const DrawingEditor = () => {
@@ -180,7 +201,9 @@ const DrawingEditor = () => {
   const [action, setAction] = useState('none'); 
   const [tool, setTool] = useState("line");
   const [selectedElement, setSelectedElement] = useState(null);
-  //hook
+  const [stroke,setStroke] = useState(1);
+  const [eraserRadius, setEraserRadius] = useState(10);
+
 
 
   useEffect(() => {
@@ -204,17 +227,18 @@ const DrawingEditor = () => {
     const context = canvas.getContext("2d");
     context.clearRect(0,0, canvas.width, canvas.height);
     const roughCanvas = rough.canvas(canvas);
+    elements
+    .filter(el => !el.erased)
+    .forEach(el => drawElement(roughCanvas, context, el, stroke));
     
-    elements.forEach(element => drawElement(roughCanvas,context,element))
-    
-  }, [elements]);
+  }, [elements,stroke]);
 
   const updateElement = (id, x1,y1,x2,y2,type) => {
     const elementsCopy = [...elements];
     switch(type){
         case "line":
         case "rectangle":
-          elementsCopy[id] = CreateElement(id, x1, y1, x2,y2,type);
+          elementsCopy[id] = CreateElement(id, x1, y1, x2,y2,type,stroke);
           
           break;
           case "pencil":
@@ -230,8 +254,13 @@ const DrawingEditor = () => {
 
   const handleMouseDown = (event) =>{
     const {clientX,clientY } = event;
+      if (tool === "eraser") {
+      setAction("erasing");
+      setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
+      return;
+  }
     if (tool == "Selection"){
-      //if on element steaction
+      //if on element 
       const element = getElementAtPosition(clientX,clientY,elements);
       if (element){
         const offsetX = clientX - element.x1;
@@ -246,9 +275,13 @@ const DrawingEditor = () => {
         }
         
       }
-    }else{
+    
+    }
+    
+    
+    else{
     const id = elements.length;
-    const element = CreateElement(id, clientX,clientY,clientX,clientY, tool);
+    const element = CreateElement(id, clientX,clientY,clientX,clientY, tool,stroke);
     setElements(prevState =>[...prevState,element]);
 
     setAction("drawing");
@@ -267,6 +300,13 @@ const DrawingEditor = () => {
       : "default";
       
     }
+   
+      if (action === "erasing") {
+        setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
+      }
+    
+    
+    
 
     if (action == "drawing"){
     const index = elements.length - 1;
@@ -340,6 +380,35 @@ const DrawingEditor = () => {
     onChange={()=>setTool("pencil")}
     />
     < label htmlFor ="pencil">Pencil</label>
+
+    <input
+    type="radio"
+    id="eraser"
+    checked={tool =="eraser"}
+    onChange={()=>setTool("eraser")}
+    />
+    < label htmlFor ="eraser">Eraser</label>
+
+
+    <div>
+
+    <label>
+    Eraser size
+    <input
+    type="range"
+    min="5"
+    max="50"
+    value={eraserRadius}
+    onChange={e => setEraserRadius(e.target.value)}
+    />
+</label>
+<label htmlFor="brushStroke">brush Stroke</label>
+    <input type="range" id="brushStroke" name="brushStroke" min="1" max="50"   onChange={(e) => setStroke(Number(e.target.value))}/>
+
+  </div>
+
+
+
     </div>
 
     <div style ={{position: "fixed", bottom: 10}}>
@@ -347,6 +416,10 @@ const DrawingEditor = () => {
       <button onClick={undo}>Undo</button>
       <button onClick={redo}>Redo</button>
     </div>
+
+
+
+
     <canvas id = "canvas" 
   width = {window.innerWidth}
   height = {window.innerHeight}

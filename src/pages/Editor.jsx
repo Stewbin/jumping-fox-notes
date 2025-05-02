@@ -9,16 +9,55 @@ import { Strike } from "@tiptap/extension-strike";
 import TextStyle from "@tiptap/extension-text-style";
 import BulletList from "@tiptap/extension-bullet-list";
 import { MdFormatListBulleted } from "react-icons/md";
-import { FontFamily } from "@tiptap/extension-font-family";
-import Image from "@tiptap/extension-image";
-import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import { FaCircleStop, FaMicrophone } from "react-icons/fa6";
-import "react-tabs/style/react-tabs.css"; // Import default styling
+import { FontFamily } from '@tiptap/extension-font-family';
+import Image from '@tiptap/extension-image';
+import { Tab,Tabs, TabList, TabPanel } from 'react-tabs';
+import { Link,useParams,useNavigate } from 'react-router-dom';
+import { FaCircleStop, FaMicrophone, FaImage, FaCompressArrowsAlt, FaExpandArrowsAlt } from 'react-icons/fa6'
+import 'react-tabs/style/react-tabs.css'; // Import default styling
 // for dark mode
 import "@sinm/react-chrome-tabs/css/chrome-tabs-dark-theme.css";
 
 import "../styles/Editor.css";
+
+// Handle resizable images
+const ResizableImage = Image.extend({
+ addAttributes() {
+   return {
+     ...Image.config.addAttributes(),
+     width: {
+       default: 'auto',
+       parseHTML: element => element.getAttribute('width') || 'auto',
+       renderHTML: attributes => {
+         if (!attributes.width) {
+           return {};
+         }
+         return { width: attributes.width };
+       },
+     },
+     height: {
+       default: 'auto',
+       parseHTML: element => element.getAttribute('height') || 'auto',
+       renderHTML: attributes => {
+         if (!attributes.height) {
+           return {};
+         }
+         return { height: attributes.height };
+       },
+     },
+     dataId: {
+       default: null,
+       parseHTML: element => element.getAttribute('data-id'),
+       renderHTML: attributes => {
+         if (!attributes.dataId) {
+           return {};
+         }
+         return { 'data-id': attributes.dataId };
+       },
+     },
+   };
+ },
+});
 
 const Editor = () => {
   const { id } = useParams();
@@ -28,6 +67,17 @@ const Editor = () => {
 
   const [darkMode, setDarkMode] = useState(false);
   const [note, setNote] = useState(null);
+
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageWidth, setImageWidth] = useState(300); // Default width
+  const [imageHeight, setImageHeight] = useState(200); // Default height
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
+
+  const [selectedImageId, setSelectedImageId] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const fileInputRef = useRef(null);
+  const imageIdCounter = useRef(0);
 
   const [openTabs, setOpenTabs] = useState([
     { id: "home", name: "Home", type: "home" },
@@ -43,7 +93,10 @@ const Editor = () => {
       StarterKit,
       Bold,
       Color,
-      Image,
+      ResizableImage.configure({
+        inline: true,
+        allowBase64: true,
+      }),
       BulletList,
       Underline,
       TextStyle,
@@ -54,91 +107,214 @@ const Editor = () => {
       }),
     ],
     content: "",
+    onUpdate: ({ editor }) => {
+      // Called whenever the editor's content changes
+      const editorElement = document.querySelector('.ProseMirror');
+      if (editorElement) {
+        // Add click handlers to all images
+        editorElement.querySelectorAll('img').forEach(img => {
+          if (!img.getAttribute('data-has-listeners')) {
+            img.setAttribute('data-has-listeners', 'true');
+           
+            // Double-click to open resize modal
+            img.addEventListener('dblclick', (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+             
+              const imgId = img.getAttribute('data-id');
+              if (imgId) {
+                setSelectedImageId(imgId);
+                setSelectedImage(img.src);
+                setImageWidth(parseInt(img.style.width) || parseInt(img.width) || 300);
+                setImageHeight(parseInt(img.style.height) || parseInt(img.height) || 200);
+                setShowImageModal(true);
+                setIsResizing(true);
+              }
+            });
+           
+            // Add resize handles through CSS
+            img.classList.add('resizable-image');
+          }
+        });
+      }
+    },
   });
-  const [isRecording, setIsRecording] = useState(false);
+  const [isRecording, setIsRecording] = useState(false)
   const [recordedAudios, setRecordedAudios] = useState([]);
-  const [seconds, setSeconds] = useState(0);
+    const [seconds, setSeconds] = useState(0)
 
-  const mediaStream = useRef(null);
-  const mediaRecorder = useRef(null);
-  const chunks = useRef([]);
-  const handleDeleteAudio = (indexToDelete) => {
-    setRecordedAudios((prev) => prev.filter((_, i) => i !== indexToDelete));
-  };
-  const openNewTab = (noteOrType) => {
-    if (noteOrType === "home") {
-      if (!openTabs.some((tab) => tab.id === "home")) {
-        const newTabs = [
-          ...openTabs,
-          { id: "home", title: "Home", type: "home" },
-        ];
+    const mediaStream = useRef(null)
+    const mediaRecorder = useRef(null)
+    const chunks = useRef([])
+    const handleDeleteAudio = (indexToDelete) => {
+      setRecordedAudios(prev => prev.filter((_, i) => i !== indexToDelete));
+    };
+    const openNewTab = (noteOrType) => {
+      if (noteOrType === "home") {
+        if (!openTabs.some(tab => tab.id === "home")) {
+          const newTabs = [...openTabs, { id: "home", title: "Home", type: "home" }];
+          setOpenTabs(newTabs);
+          setCurrentTabIndex(newTabs.length - 1);
+        } else {
+          const index = openTabs.findIndex(tab => tab.id === "home");
+          setCurrentTabIndex(index);
+        }
+        navigate("/home");
+        return;
+      }
+    
+      const alreadyOpenIndex = openTabs.findIndex(tab => tab.id === noteOrType.id);
+      if (alreadyOpenIndex !== -1) {
+        setCurrentTabIndex(alreadyOpenIndex);
+        navigate(`/Editor/${noteOrType.id}`);
+      } else {
+        const newTabs = [...openTabs, { ...noteOrType, type: "note" }];
         setOpenTabs(newTabs);
         setCurrentTabIndex(newTabs.length - 1);
-      } else {
-        const index = openTabs.findIndex((tab) => tab.id === "home");
-        setCurrentTabIndex(index);
+        navigate(`/Editor/${noteOrType.id}`);
       }
-      navigate("/home");
-      return;
-    }
+    };
 
-    const alreadyOpenIndex = openTabs.findIndex(
-      (tab) => tab.id === noteOrType.id
-    );
-    if (alreadyOpenIndex !== -1) {
-      setCurrentTabIndex(alreadyOpenIndex);
-      navigate(`/Editor/${noteOrType.id}`);
-    } else {
-      const newTabs = [...openTabs, { ...noteOrType, type: "note" }];
-      setOpenTabs(newTabs);
-      setCurrentTabIndex(newTabs.length - 1);
-      navigate(`/Editor/${noteOrType.id}`);
-    }
-  };
+    // Handle file selection
+    const handleFileChange = async (e) => {
+      const file = e.target.files[0];
+      if (!file) return;
 
-  const startRecording = async () => {
-    setIsRecording(true);
-    try {
-      setSeconds(0);
-      const stream = await navigator.mediaDevices.getUserMedia({ audio: true });
-      mediaStream.current = stream;
-      mediaRecorder.current = new MediaRecorder(stream);
-      mediaRecorder.current.ondataavailable = (e) => {
-        if (e.data.size > 0) {
-          chunks.current.push(e.data);
+      if (!file.type.includes('image/')) {
+        alert('Please select an image file');
+        return;
+      }
+
+      // Save the file reference
+      setSelectedImageFile(file);
+
+      // Read the file as data URL for preview
+      const reader = new FileReader();
+      reader.onload = (e) => {
+        setSelectedImage(e.target.result);
+        setShowImageModal(true);
+        setIsResizing(false);
+      };
+      reader.readAsDataURL(file);
+    };
+
+    // Function to insert image with custom size
+    const insertImage = async () => {
+      if (!selectedImage || !editor) return;
+     
+      try {
+        let imageUrl = selectedImage;
+       
+        let styleAttr = { style: 'display: block; margin: 0 auto;' };
+       
+        if (isResizing && selectedImageId) {
+         
+          const editorElement = document.querySelector('.ProseMirror');
+          const imgElement = editorElement.querySelector(`img[data-id="${selectedImageId}"]`);
+         
+          if (imgElement) {
+            // Update through the editor's commands
+            const pos = editor.view.posAtDOM(imgElement, 0);
+           
+            editor.chain().focus().setNodeSelection(pos).run();
+            editor.chain().focus().updateAttributes('image', {
+              width: `${imageWidth}px`,
+              height: `${imageHeight}px`,
+              ...styleAttr
+            }).run();
+          }
+        } else {
+          // Generate a unique ID for the image
+          const imgId = `img-${Date.now()}-${imageIdCounter.current++}`;
+         
+          // Insert new image
+          editor.chain().focus().setImage({
+            src: imageUrl,
+            width: `${imageWidth}px`,
+            height: `${imageHeight}px`,
+            dataId: imgId,
+            ...styleAttr
+          }).run();
         }
-      };
-      const timer = setInterval(() => {
-        setSeconds((prev) => prev + 1);
-      }, 1000);
+       
+        // Reset after insertion
+        setSelectedImage(null);
+        setSelectedImageFile(null);
+        setShowImageModal(false);
+        setIsResizing(false);
+        setSelectedImageId(null);
+       
+        // Clear the file input
+        if (fileInputRef.current) {
+          fileInputRef.current.value = '';
+        }
+      } catch (error) {
+        console.error("Error inserting image:", error);
+        alert("Failed to insert image. Please try again.");
+      }
+    };
 
-      mediaRecorder.current.onstop = () => {
-        const recordedBlob = new Blob(chunks.current, { type: "audio/mp3" });
+    const handleImageButtonClick = () => {
+      fileInputRef.current.click();
+    };
 
-        const reader = new FileReader();
-        reader.onloadend = () => {
-          const base64Audio = reader.result;
-          setRecordedAudios((prev) => [...prev, base64Audio]);
-        };
-        reader.readAsDataURL(recordedBlob); // converts to base64
+    // Helper function to find and resize an image
+    const resizeExistingImage = (imgId, width, height) => {
+      if (!editor) return;
+     
+      // Find the image with the given ID
+      const imageNode = document.querySelector(`.ProseMirror img[data-id="${imgId}"]`);
+     
+      if (imageNode) {
+        imageNode.style.width = `${width}px`;
+        imageNode.style.height = `${height}px`;
+      }
+    };
 
-        chunks.current = [];
-        clearTimeout(timer);
-      };
+    const startRecording = async() => {
+        setIsRecording(true)
+        try{
+            setSeconds(0)
+            const stream = await navigator.mediaDevices.getUserMedia({audio: true})
+            mediaStream.current = stream
+            mediaRecorder.current = new MediaRecorder(stream)
+            mediaRecorder.current.ondataavailable = (e) => {
+                if (e.data.size > 0){
+                    chunks.current.push(e.data)
+                }
+            }
+            const timer = setInterval(() => {
+                setSeconds(prev => prev + 1)
+            }, 1000)
 
-      mediaRecorder.current.start();
-    } catch (error) {
-      console.log(error);
+            mediaRecorder.current.onstop = () => {
+              const recordedBlob = new Blob(chunks.current, { type: 'audio/mp3' });
+  
+              const reader = new FileReader();
+              reader.onloadend = () => {
+                const base64Audio = reader.result;
+                setRecordedAudios(prev => [...prev, base64Audio]);
+              };
+              reader.readAsDataURL(recordedBlob); // converts to base64
+            
+              chunks.current = [];
+              clearTimeout(timer);
+            };
+
+            mediaRecorder.current.start()
+
+        }catch(error){
+            console.log(error);
+        }
     }
-  };
 
-  const stopRecording = () => {
-    setIsRecording(false);
-    if (mediaRecorder.current) {
-      mediaRecorder.current.stop();
-      mediaStream.current.getTracks().forEach((track) => track.stop());
+    const stopRecording = () => {
+        setIsRecording(false)
+        if(mediaRecorder.current){
+            mediaRecorder.current.stop()
+            mediaStream.current.getTracks().forEach(track => track.stop())
+        }
     }
-  };
   const handleDeleteNote = () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this note?"
@@ -162,8 +338,36 @@ const Editor = () => {
   const toggleOpenMenu = () => {
     const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
     setAllNotes(savedNotes);
-    setOpenMenuOpen((prev) => !prev);
-  };
+    setOpenMenuOpen(prev => !prev);
+  }
+
+  // Adding menu for image resizing
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      // Check if clicked element is an image
+      if (e.target.tagName === 'IMG' && e.target.closest('.ProseMirror')) {
+        e.preventDefault(); // Prevent default context menu
+       
+        // Get image details
+        const imgId = e.target.getAttribute('data-id');
+        if (imgId) {
+          setSelectedImageId(imgId);
+          setSelectedImage(e.target.src);
+          setImageWidth(parseInt(e.target.style.width) || parseInt(e.target.width) || 300);
+          setImageHeight(parseInt(e.target.style.height) || parseInt(e.target.height) || 200);
+          setShowImageModal(true);
+          setIsResizing(true);
+        }
+      }
+    };
+   
+    document.addEventListener('contextmenu', handleContextMenu);
+   
+    return () => {
+      document.removeEventListener('contextmenu', handleContextMenu);
+    };
+  }, [editor]);
+
   useEffect(() => {
     const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
     const currentNote = savedNotes.find((n) => String(n.id) === String(id));
@@ -292,13 +496,6 @@ const Editor = () => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
-  const addImage = useCallback(() => {
-    const url = window.prompt("URL");
-
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
-  }, [editor]);
 
   if (!editor) {
     return null;
@@ -387,19 +584,28 @@ const Editor = () => {
         </button>
         <select
           type="font"
-          onChange={(event) =>
-            editor.chain().focus().setFontFamily(event.target.value).run()
-          }
-        >
-          {fonts.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
-          ))}
-        </select>
-        <button onClick={addImage}>Set image</button>
-        {isRecording ? (
-          <button onClick={stopRecording}>
+      onChange={(event) => editor.chain().focus().setFontFamily(event.target.value).run()}
+    >
+      {fonts.map((font) => (
+        <option key={font} value={font}>
+          {font}
+        </option>
+      ))}
+    </select>
+
+    <input
+      type="file"
+      ref={fileInputRef}
+      onChange={handleFileChange}
+      accept="image/*"
+      style={{ display: 'none' }}
+    />
+   
+    <button onClick={handleImageButtonClick} className="toolbar-button" title="Upload Image">
+      <FaImage/>
+    </button>
+
+    {isRecording ? <button onClick={stopRecording} >
             <FaCircleStop />
           </button>
         ) : (
@@ -408,25 +614,83 @@ const Editor = () => {
           </button>
         )}
       </div>
-      <Tabs
-        className="note-tabs"
-        selectedIndex={currentTabIndex}
-        onSelect={(index) => {
-          setCurrentTabIndex(index);
-          const tab = openTabs[index];
-          if (tab.type === "home") {
-            navigate("/home");
-          } else {
-            navigate(`/editor/${tab.id}`);
-          }
-        }}
-      >
-        <TabList className="note-tabs">
-          {openTabs.map((tab, index) => (
-            <Tab key={tab.id}>{tab.name}</Tab>
-          ))}
-        </TabList>
-      </Tabs>
+
+      {showImageModal && (
+        <div className="image-modal-overlay">
+          <div className="image-modal">
+            <h3>{isResizing ? 'Resize Image' : 'Upload & Adjust Image'}</h3>
+            <div className="image-preview">
+              <img
+                src={selectedImage}
+                alt="Preview"
+                style={{
+                  maxWidth: '100%',
+                  maxHeight: '300px',
+                  width: `${imageWidth}px`,
+                  height: `${imageHeight}px`
+                }}
+              />
+            </div>
+            <div className="image-controls">
+              <div className="size-control">
+                <label>Width:</label>
+                <input
+                  type="number"
+                  value={imageWidth}
+                  onChange={(e) => setImageWidth(Number(e.target.value))}
+                  min="50"
+                  max="1000"
+                />
+                <span>px</span>
+              </div>
+              <div className="size-control">
+                <label>Height:</label>
+                <input
+                  type="number"
+                  value={imageHeight}
+                  onChange={(e) => setImageHeight(Number(e.target.value))}
+                  min="50"
+                  max="1000"
+                />
+                <span>px</span>
+              </div>
+            </div>
+            <div className="modal-buttons">
+              <button onClick={() => {
+                setShowImageModal(false);
+                setIsResizing(false);
+                setSelectedImageId(null);
+                setSelectedImage(null);
+              }}>Cancel</button>
+              <button
+                onClick={insertImage}
+                className="btn-primary"
+              >
+                {isResizing ? 'Apply Changes' : 'Insert Image'}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
+      <Tabs className="note-tabs"selectedIndex={currentTabIndex} onSelect={index => {
+  setCurrentTabIndex(index);
+  const tab = openTabs[index];
+  if (tab.type === "home") {
+    navigate("/home");
+  } else {
+    navigate(`/editor/${tab.id}`);
+  }
+}}>
+  <TabList className="note-tabs">
+    {openTabs.map((tab, index) => (
+      <Tab key={tab.id}>
+        {tab.name}
+        
+      </Tab>
+    ))}
+  </TabList>
+</Tabs>
       <div className="editor-content">
         <EditorContent editor={editor} />
         <div className="audio-stack">

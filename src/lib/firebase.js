@@ -2,7 +2,6 @@
 import { initializeApp } from "firebase/app";
 import {
   getAuth,
-  connectAuthEmulator,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
 } from "firebase/auth";
@@ -10,7 +9,8 @@ import {
   getFirestore,
   doc,
   setDoc,
-  connectFirestoreEmulator,
+  updateDoc,
+  getDoc,
 } from "firebase/firestore";
 
 // Your Firebase configuration
@@ -46,4 +46,6 @@ export {
   createUserWithEmailAndPassword,
   doc,
   setDoc,
+  getDoc,
+  updateDoc,
 };
