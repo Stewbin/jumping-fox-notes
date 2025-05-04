@@ -4,11 +4,19 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  connectAuthEmulator,
 } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  updateDoc,
+  getDoc,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
 
 // Your Firebase configuration
-const firebaseConfig = {
+let firebaseConfig = {
   apiKey: "AIzaSyCYIFhBAqMaM4GQJTc6EaekQXsq5KiWBDE",
   authDomain: "jumping-fox-notes.firebaseapp.com",
   projectId: "jumping-fox-notes",
@@ -24,6 +32,10 @@ const app = initializeApp(firebaseConfig);
 const auth = getAuth(app);
 const db = getFirestore(app);
 
+// If using emulators
+// connectAuthEmulator(auth, "http://127.0.0.1:9099");
+// connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
 // Export everything your components need
 export {
   auth,
@@ -32,4 +44,6 @@ export {
   createUserWithEmailAndPassword,
   doc,
   setDoc,
+  getDoc,
+  updateDoc,
 };

@@ -1,94 +1,58 @@
 import React, { useState, useEffect } from "react";
-import Navbar from "../components/Navbar";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
-import NotebookCard from "../components/NotebookCard";
-import { /* pullNotebooks, */ pullNotes } from "../lib/firestore";
+import Navbar from "../components/Navbar";
+import { pullNotes, pushNote } from "../lib/firestore";
 
-export default function Home() {
-  const [cwd, setCwd] = useState(["Root"]); // Array of path segments
-  // TODO: Get notes from local storage / DB
+export default function Home({ onOpenNote, darkMode }) {
   const [notes, setNotes] = useState([]);
-  const [notebooks, setNotebooks] = useState([
-    { name: "ICSI 418Y", tags: ["Computer Science", "Engineering"] },
-  ]);
-  const openNewTab = (note) => {
-    window.open(`/Editor/${note.id}`, "_blank");
-  };
 
   useEffect(() => {
     const saved = localStorage.getItem("notes");
-    // const saved = getNotes(cwd);
-    if (saved != null) {
-      setNotes(JSON.parse(saved));
-    }
-  }, [cwd]);
+    setNotes(JSON.parse(saved) ?? []);
+    // pullNotes()
+    //   .then((saved) => setNotes(saved))
+    //   .catch((error) => console.error(error));
+  }, []);
   const handleNewNote = () => {
     const name = prompt("Enter note name:");
     if (!name) return;
 
     const newNote = {
-      id: Date.now().toString(), // Simple timestamp ID
       name,
       content: "",
       tags: [],
+      timestamp: new Date(),
+      audios: [],
+      id: Date.now(),
     };
 
+    // pushNote(newNote, "");
     const updatedNotes = [...notes, newNote];
     setNotes(updatedNotes);
     localStorage.setItem("notes", JSON.stringify(updatedNotes));
   };
 
-  const handleClickNotebook = (nbName) => {
-    setCwd([...cwd, nbName]);
-    setNotes(pullNotes([...cwd, nbName]));
+  const handleSearch = (event, searchText) => {
+    const filteredNotes = notes.filter((note) => note.name === searchText);
+    setNotes(filteredNotes);
   };
   return (
     <>
-      <Navbar onNewNote={handleNewNote} />
-      <div className="container">
+      <Navbar onNewNote={handleNewNote} onSearch={handleSearch} />
+      <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">
-          {/* Show current working 'directory' */}
-          <nav aria-label="breadcrumb">
-            <ol className="breadcrumb">
-              {cwd.map((segment, index) => (
-                <li
-                  className={`breadcrumb-item ${
-                    index + 1 < cwd.length ? "" : "active"
-                  }`}
-                >
-                  {segment}
-                </li>
-              ))}
-            </ol>
-          </nav>
+          <h3 className="m-3">Recent Notes</h3>
         </div>
         <div className="row">
-          <h3 className="m-3">Your Notebooks</h3>
-        </div>
-        <div className="row">
-          {notes.map((note) => (
+          {notes?.map((note) => (
             <div key={note.id} className="col-lg-2 col-md-3 col-sm-6">
               <NoteCard
                 id={note.id}
                 title={note.name}
                 tags={note.tags}
-                lastModified={new Date()}
-                onClick={() => openNewTab(note)}
-              />
-            </div>
-          ))}
-        </div>
-        <div className="row">
-          <h3 className="m-3">Your Notebooks</h3>
-        </div>
-        <div className="row">
-          {notebooks.map((nb) => (
-            <div key={nb.name} className="col-lg-2 col-md-3 col-sm-6">
-              <NotebookCard
-                name={nb.name}
-                tags={nb.tags}
-                onClick={handleClickNotebook}
+                timestamp={new Date()}
+                onOpenNote={() => onOpenNote(note.id, note.name)}
               />
             </div>
           ))}

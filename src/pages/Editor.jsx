@@ -11,89 +11,242 @@ import BulletList from "@tiptap/extension-bullet-list";
 import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
-import { Tab, Tabs, TabList, TabPanel } from "react-tabs";
-import { Link, useParams, useNavigate } from "react-router-dom";
-import "react-tabs/style/react-tabs.css"; // Import default styling
-import { FaCircleStop, FaMicrophone } from "react-icons/fa6";
-import "react-tabs/style/react-tabs.css"; // Import default styling
+import { useNavigate } from "react-router-dom";
+import { FaCircleStop, FaMicrophone, FaImage } from "react-icons/fa6";
+
 // for dark mode
-import "@sinm/react-chrome-tabs/css/chrome-tabs-dark-theme.css";
+// import "@sinm/react-chrome-tabs/css/chrome-tabs-dark-theme.css";
 
 import "../styles/Editor.css";
+import MenuBar from "../components/MenuBar";
+// import { pullNote, pushNote } from "../lib/firestore";
 
-const Editor = () => {
-  const { id } = useParams();
-  const navigate = useNavigate();
+// Handle resizable images
+const ResizableImage = Image.extend({
+  addAttributes() {
+    return {
+      ...Image.config.addAttributes(),
+      width: {
+        default: "auto",
+        parseHTML: (element) => element.getAttribute("width") || "auto",
+        renderHTML: (attributes) => {
+          if (!attributes.width) {
+            return {};
+          }
+          return { width: attributes.width };
+        },
+      },
+      height: {
+        default: "auto",
+        parseHTML: (element) => element.getAttribute("height") || "auto",
+        renderHTML: (attributes) => {
+          if (!attributes.height) {
+            return {};
+          }
+          return { height: attributes.height };
+        },
+      },
+      dataId: {
+        default: null,
+        parseHTML: (element) => element.getAttribute("data-id"),
+        renderHTML: (attributes) => {
+          if (!attributes.dataId) {
+            return {};
+          }
+          return { "data-id": attributes.dataId };
+        },
+      },
+    };
+  },
+});
+
+const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   const [tags, setTags] = useState([]);
-  const [allNotes, setAllNotes] = useState([]);
 
-  const [darkMode, setDarkMode] = useState(false);
   const [note, setNote] = useState(null);
 
-  const [currentTabIndex, setCurrentTabIndex] = useState(0);
-  const [openTabs, setOpenTabs] = useState([
-    { id: "home", name: "Home", type: "home" },
-  ]);
+  const [selectedImage, setSelectedImage] = useState(null);
+  const [imageWidth, setImageWidth] = useState(300); // Default width
+  const [imageHeight, setImageHeight] = useState(200); // Default height
+  const [showImageModal, setShowImageModal] = useState(false);
+  const [selectedImageFile, setSelectedImageFile] = useState(null);
 
-  const toggleDarkMode = () => {
-    setDarkMode((prev) => !prev);
-  };
+  const [selectedImageId, setSelectedImageId] = useState(null);
+  const [isResizing, setIsResizing] = useState(false);
+  const fileInputRef = useRef(null);
+  const imageIdCounter = useRef(0);
 
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Bold,
       Color,
-      Image,
-      BulletList,
+      ResizableImage.configure({
+        inline: true,
+        allowBase64: true,
+      }),
+      // already in StarterKit
+      // Bold,
+      // BulletList,
+      // Italic,
+      // Strike,
       Underline,
       TextStyle,
-      Italic,
-      Strike,
       FontFamily.configure({
         types: ["textStyle"],
       }),
     ],
     content: "",
+    onUpdate: ({ editor }) => {
+      // Called whenever the editor's content changes
+      const editorElement = document.querySelector(".ProseMirror");
+      if (editorElement) {
+        // Add click handlers to all images
+        editorElement.querySelectorAll("img").forEach((img) => {
+          if (!img.getAttribute("data-has-listeners")) {
+            img.setAttribute("data-has-listeners", "true");
+
+            // Double-click to open resize modal
+            img.addEventListener("dblclick", (e) => {
+              e.preventDefault();
+              e.stopPropagation();
+
+              const imgId = img.getAttribute("data-id");
+              if (imgId) {
+                setSelectedImageId(imgId);
+                setSelectedImage(img.src);
+                setImageWidth(
+                  parseInt(img.style.width) || parseInt(img.width) || 300
+                );
+                setImageHeight(
+                  parseInt(img.style.height) || parseInt(img.height) || 200
+                );
+                setShowImageModal(true);
+                setIsResizing(true);
+              }
+            });
+
+            // Add resize handles through CSS
+            img.classList.add("resizable-image");
+          }
+        });
+      }
+    },
   });
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudios, setRecordedAudios] = useState([]);
   const [seconds, setSeconds] = useState(0);
-
+  const navigate = useNavigate();
   const mediaStream = useRef(null);
   const mediaRecorder = useRef(null);
   const chunks = useRef([]);
   const handleDeleteAudio = (indexToDelete) => {
     setRecordedAudios((prev) => prev.filter((_, i) => i !== indexToDelete));
   };
-  const openNewTab = (noteOrType) => {
-    if (noteOrType === "home") {
-      if (!openTabs.some((tab) => tab.id === "home")) {
-        const newTabs = [
-          ...openTabs,
-          { id: "home", title: "Home", type: "home" },
-        ];
-        setOpenTabs(newTabs);
-        setCurrentTabIndex(newTabs.length - 1);
-      } else {
-        const index = openTabs.findIndex((tab) => tab.id === "home");
-        setCurrentTabIndex(index);
-      }
-      navigate("/home");
+
+  // Handle file selection
+  const handleFileChange = async (e) => {
+    const file = e.target.files[0];
+    if (!file) return;
+
+    if (!file.type.includes("image/")) {
+      alert("Please select an image file");
       return;
     }
 
-    const alreadyOpenIndex = openTabs.findIndex(
-      (tab) => tab.id === noteOrType.id
+    // Save the file reference
+    setSelectedImageFile(file);
+
+    // Read the file as data URL for preview
+    const reader = new FileReader();
+    reader.onload = (e) => {
+      setSelectedImage(e.target.result);
+      setShowImageModal(true);
+      setIsResizing(false);
+    };
+    reader.readAsDataURL(file);
+  };
+
+  // Function to insert image with custom size
+  const insertImage = async () => {
+    if (!selectedImage || !editor) return;
+
+    try {
+      let imageUrl = selectedImage;
+
+      let styleAttr = { style: "display: block; margin: 0 auto;" };
+
+      if (isResizing && selectedImageId) {
+        const editorElement = document.querySelector(".ProseMirror");
+        const imgElement = editorElement.querySelector(
+          `img[data-id="${selectedImageId}"]`
+        );
+
+        if (imgElement) {
+          // Update through the editor's commands
+          const pos = editor.view.posAtDOM(imgElement, 0);
+
+          editor.chain().focus().setNodeSelection(pos).run();
+          editor
+            .chain()
+            .focus()
+            .updateAttributes("image", {
+              width: `${imageWidth}px`,
+              height: `${imageHeight}px`,
+              ...styleAttr,
+            })
+            .run();
+        }
+      } else {
+        // Generate a unique ID for the image
+        const imgId = `img-${Date.now()}-${imageIdCounter.current++}`;
+
+        // Insert new image
+        editor
+          .chain()
+          .focus()
+          .setImage({
+            src: imageUrl,
+            width: `${imageWidth}px`,
+            height: `${imageHeight}px`,
+            dataId: imgId,
+            ...styleAttr,
+          })
+          .run();
+      }
+
+      // Reset after insertion
+      setSelectedImage(null);
+      setSelectedImageFile(null);
+      setShowImageModal(false);
+      setIsResizing(false);
+      setSelectedImageId(null);
+
+      // Clear the file input
+      if (fileInputRef.current) {
+        fileInputRef.current.value = "";
+      }
+    } catch (error) {
+      console.error("Error inserting image:", error);
+      alert("Failed to insert image. Please try again.");
+    }
+  };
+
+  const handleImageButtonClick = () => {
+    fileInputRef.current.click();
+  };
+
+  // Helper function to find and resize an image
+  const resizeExistingImage = (imgId, width, height) => {
+    if (!editor) return;
+
+    // Find the image with the given ID
+    const imageNode = document.querySelector(
+      `.ProseMirror img[data-id="${imgId}"]`
     );
-    if (alreadyOpenIndex !== -1) {
-      setCurrentTabIndex(alreadyOpenIndex);
-      navigate(`/Editor/${noteOrType.id}`);
-    } else {
-      const newTabs = [...openTabs, { ...noteOrType, type: "note" }];
-      setOpenTabs(newTabs);
-      setCurrentTabIndex(newTabs.length - 1);
-      navigate(`/Editor/${noteOrType.id}`);
+
+    if (imageNode) {
+      imageNode.style.width = `${width}px`;
+      imageNode.style.height = `${height}px`;
     }
   };
 
@@ -150,24 +303,48 @@ const Editor = () => {
     const updatedNotes = savedNotes.filter((n) => String(n.id) !== String(id));
 
     localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    navigate("/home");
+    navigateToHome();
   };
-  const dropdownRef = useRef(null);
 
-  const [isFileMenuOpen, setFileMenuOpen] = useState(false);
+  // Adding menu for image resizing
+  useEffect(() => {
+    const handleContextMenu = (e) => {
+      // Check if clicked element is an image
+      if (e.target.tagName === "IMG" && e.target.closest(".ProseMirror")) {
+        e.preventDefault(); // Prevent default context menu
 
-  const toggleFileMenu = () => {
-    setFileMenuOpen((prev) => !prev);
-  };
-  const [isOpenMenuOpen, setOpenMenuOpen] = useState(false);
-  const toggleOpenMenu = () => {
-    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
-    setAllNotes(savedNotes);
-    setOpenMenuOpen((prev) => !prev);
-  };
+        // Get image details
+        const imgId = e.target.getAttribute("data-id");
+        if (imgId) {
+          setSelectedImageId(imgId);
+          setSelectedImage(e.target.src);
+          setImageWidth(
+            parseInt(e.target.style.width) || parseInt(e.target.width) || 300
+          );
+          setImageHeight(
+            parseInt(e.target.style.height) || parseInt(e.target.height) || 200
+          );
+          setShowImageModal(true);
+          setIsResizing(true);
+        }
+      }
+    };
+
+    document.addEventListener("contextmenu", handleContextMenu);
+
+    return () => {
+      document.removeEventListener("contextmenu", handleContextMenu);
+    };
+  }, [editor]);
+
+  // Open a Note
   useEffect(() => {
     const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+    console.log(`id: ${id}`);
     const currentNote = savedNotes.find((n) => String(n.id) === String(id));
+    console.log(currentNote);
+
+    // const currentNote = pullNote(id);
     setRecordedAudios(currentNote.audios || []);
 
     if (!currentNote) {
@@ -177,44 +354,14 @@ const Editor = () => {
     }
 
     setNote(currentNote);
-    setOpenTabs((prevTabs) => {
-      const alreadyOpen = prevTabs.some((tab) => tab.id === currentNote.id);
-      if (!alreadyOpen) {
-        return [...prevTabs, currentNote];
-      }
-      return prevTabs;
-    });
-    // Set active tab
-    const tabIndex = openTabs.findIndex((tab) => tab.id === currentNote.id);
-    setCurrentTabIndex(tabIndex === -1 ? openTabs.length : tabIndex);
     if (editor) {
       editor.commands.setContent(currentNote.content || "");
     }
   }, [id, editor, navigate]);
 
+  // Save note
   useEffect(() => {
     if (!editor || !note) return;
-
-    const updateContent = () => {
-      const updatedContent = editor.getHTML();
-      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
-
-      const updatedNotes = savedNotes.map((n) =>
-        String(n.id) === String(id)
-          ? {
-              ...n,
-              content: updatedContent,
-              lastModified: new Date().toISOString(),
-              audios: recordedAudios,
-            }
-          : n
-      );
-
-      localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    };
-
-    editor.on("update", updateContent);
-    return () => editor.off("update", updateContent);
   }, [editor, note, id, recordedAudios]);
 
   const handleNewNote = () => {
@@ -234,7 +381,7 @@ const Editor = () => {
     savedNotes.push(newNote);
     localStorage.setItem("notes", JSON.stringify(savedNotes));
 
-    openNewTab(newNote); // new tab
+    openNewNote(newId, name); // new tab
   };
 
   const handleManualSave = () => {
@@ -258,25 +405,6 @@ const Editor = () => {
     alert("Note saved!");
   };
 
-  // Handle click outside for file dropdown
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setFileMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
-  useEffect(() => {
-    const handleClickOutside = (event) => {
-      if (dropdownRef.current && !dropdownRef.current.contains(event.target)) {
-        setFileMenuOpen(false);
-      }
-    };
-    document.addEventListener("mousedown", handleClickOutside);
-    return () => document.removeEventListener("mousedown", handleClickOutside);
-  }, []);
   // Toolbar button handlers
   const toggleBold = () => {
     editor?.chain().focus().toggleBold().run();
@@ -293,13 +421,6 @@ const Editor = () => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
-  const addImage = useCallback(() => {
-    const url = window.prompt("URL");
-
-    if (url) {
-      editor.chain().focus().setImage({ src: url }).run();
-    }
-  }, [editor]);
 
   if (!editor) {
     return null;
@@ -307,187 +428,158 @@ const Editor = () => {
   const fonts = ["Arial", "Georgia", "Courier New", "Times New Roman"];
 
   return (
-    <div className={`editor-container ${darkMode ? "dark-mode" : ""}`}>
-      {/* Top Navigation Bar */}
-
-      <nav className="top-bar">
-        <button classname="home-btn">
-          <Link to="/home" className="nav-link">
-            Home
-          </Link>
-        </button>
-
-        <div className="dropdown" ref={dropdownRef}>
-          <button className="dropbtn" onClick={toggleFileMenu}>
-            File
-          </button>
-          {isFileMenuOpen && (
-            <div className="dropdown-content">
-              <table>
-                <tbody>
-                  <tr>
-                    <td>
-                      <button>New</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button>Open</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button>Save</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button
-                        onClick={handleDeleteNote}
-                        style={{ color: "red" }}
-                      >
-                        Delete Note
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        <div className="dropdown">
-          <button className="dropbtn">Edit</button>
-        </div>
-        <button onClick={toggleDarkMode}>
-          {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-        </button>
-
-        <div className="dropdown" ref={dropdownRef}>
-          <button className="dropbtn" onClick={toggleFileMenu}>
-            File
-          </button>
-          {isFileMenuOpen && (
-            <div className="dropdown-content">
-              <table>
-                <tbody>
-                  <tr>
-                    <td>
-                      <button>New</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button>Open</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button>Save</button>
-                    </td>
-                  </tr>
-                  <tr>
-                    <td>
-                      <button
-                        onClick={handleDeleteNote}
-                        style={{ color: "red" }}
-                      >
-                        Delete Note
-                      </button>
-                    </td>
-                  </tr>
-                </tbody>
-              </table>
-            </div>
-          )}
-        </div>
-        <div className="dropdown">
-          <button className="dropbtn">Edit</button>
-        </div>
-        <button onClick={toggleDarkMode}>
-          {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
-        </button>
-      </nav>
-      <div className="toolbar">
-        <input
-          type="color"
-          onInput={(event) =>
-            editor.chain().focus().setColor(event.target.value).run()
-          }
-          value={editor.getAttributes("textStyle").color}
-          data-testid="setColor"
-        />
-        <button onClick={toggleBold} className="toolbar-button">
-          B
-        </button>
-        <button onClick={toggleItalic} className="toolbar-button">
-          I
-        </button>
-        <button onClick={toggleUnderline} className="toolbar-button">
-          U
-        </button>
-        <button onClick={toggleStrike} className="toolbar-button">
-          S
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive("bulletList") ? "is-active" : ""}
-        >
-          <MdFormatListBulleted />
-        </button>
-        <select
-          type="font"
-          onChange={(event) =>
-            editor.chain().focus().setFontFamily(event.target.value).run()
-          }
-        >
-          {fonts.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
-          ))}
-        </select>
-        <button onClick={addImage}>Set image</button>
-        {isRecording ? (
-          <button onClick={stopRecording}>
-            <FaCircleStop />
-          </button>
-        ) : (
-          <button onClick={startRecording}>
-            <FaMicrophone />
-          </button>
-        )}
-      </div>
-      <Tabs
-        className="note-tabs"
-        selectedIndex={currentTabIndex}
-        onSelect={(index) => {
-          setCurrentTabIndex(index);
-          const tab = openTabs[index];
-          if (tab.type === "home") {
-            navigate("/home");
-          } else {
-            navigate(`/editor/${tab.id}`);
-          }
-        }}
+    <>
+      <MenuBar
+        onFileNew={handleNewNote}
+        onFileSave={handleManualSave}
+        onFileDelete={handleDeleteNote}
+        darkMode={darkMode}
+        openNewNote={openNewNote}
+        navigateToHome={navigateToHome}
+      />
+      <div
+        className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}
       >
-        <TabList className="note-tabs">
-          {openTabs.map((tab, index) => (
-            <Tab key={tab.id}>{tab.name}</Tab>
-          ))}
-        </TabList>
-      </Tabs>
-      <div className="editor-content">
-        <EditorContent editor={editor} />
-        <div className="audio-stack">
-          {recordedAudios.map((audioData, index) => (
-            <div key={index}>
-              <audio controls src={audioData}></audio>
-              <button onClick={() => handleDeleteAudio(index)}>Delete</button>
+        {/* Tool Bar */}
+        <div className="toolbar">
+          <input
+            type="color"
+            onInput={(event) =>
+              editor.chain().focus().setColor(event.target.value).run()
+            }
+            value={editor.getAttributes("textStyle").color}
+            data-testid="setColor"
+          />
+          <button onClick={toggleBold} className="toolbar-button">
+            B
+          </button>
+          <button onClick={toggleItalic} className="toolbar-button">
+            I
+          </button>
+          <button onClick={toggleUnderline} className="toolbar-button">
+            U
+          </button>
+          <button onClick={toggleStrike} className="toolbar-button">
+            S
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={editor.isActive("bulletList") ? "is-active" : ""}
+          >
+            <MdFormatListBulleted />
+          </button>
+          <select
+            type="font"
+            onChange={(event) =>
+              editor.chain().focus().setFontFamily(event.target.value).run()
+            }
+          >
+            {fonts.map((font) => (
+              <option key={font} value={font}>
+                {font}
+              </option>
+            ))}
+          </select>
+
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+
+          <button
+            onClick={handleImageButtonClick}
+            className="toolbar-button"
+            title="Upload Image"
+          >
+            <FaImage />
+          </button>
+
+          {isRecording ? (
+            <button onClick={stopRecording}>
+              <FaCircleStop />
+            </button>
+          ) : (
+            <button onClick={startRecording}>
+              <FaMicrophone />
+            </button>
+          )}
+        </div>
+
+        {showImageModal && (
+          <div className="image-modal-overlay">
+            <div className="image-modal">
+              <h3>{isResizing ? "Resize Image" : "Upload & Adjust Image"}</h3>
+              <div className="image-preview">
+                <img
+                  src={selectedImage}
+                  alt="Preview"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "300px",
+                    width: `${imageWidth}px`,
+                    height: `${imageHeight}px`,
+                  }}
+                />
+              </div>
+              <div className="image-controls">
+                <div className="size-control">
+                  <label>Width:</label>
+                  <input
+                    type="number"
+                    value={imageWidth}
+                    onChange={(e) => setImageWidth(Number(e.target.value))}
+                    min="50"
+                    max="1000"
+                  />
+                  <span>px</span>
+                </div>
+                <div className="size-control">
+                  <label>Height:</label>
+                  <input
+                    type="number"
+                    value={imageHeight}
+                    onChange={(e) => setImageHeight(Number(e.target.value))}
+                    min="50"
+                    max="1000"
+                  />
+                  <span>px</span>
+                </div>
+              </div>
+              <div className="modal-buttons">
+                <button
+                  onClick={() => {
+                    setShowImageModal(false);
+                    setIsResizing(false);
+                    setSelectedImageId(null);
+                    setSelectedImage(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button onClick={insertImage} className="btn-primary">
+                  {isResizing ? "Apply Changes" : "Insert Image"}
+                </button>
+              </div>
             </div>
-          ))}
+          </div>
+        )}
+
+        <div className="editor-content">
+          <EditorContent editor={editor} />
+          <div className="audio-stack">
+            {recordedAudios.map((audioData, index) => (
+              <div key={index}>
+                <audio controls src={audioData}></audio>
+                <button onClick={() => handleDeleteAudio(index)}>Delete</button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

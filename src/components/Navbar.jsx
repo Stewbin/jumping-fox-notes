@@ -7,13 +7,13 @@ import {
 import fox from "../fox.svg";
 import { RxAvatar } from "react-icons/rx";
 
-export default function Navbar({ onNewNote, onNewNotebook }) {
+export default function Navbar({ onNewNote, onSearch }) {
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
-      <div className="container">
-        <a className="navbar-brand" href="/">
+      <div className="container ">
+        <span className="navbar-brand">
           <img src={fox} alt="Jumping Fox Notes" className="logo" />
-        </a>
+        </span>
         <button
           className="navbar-toggler"
           type="button"
@@ -23,6 +23,7 @@ export default function Navbar({ onNewNote, onNewNotebook }) {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarContent">
+          {/* Create-buttons */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li key={1} className="nav-item">
               <button className="btn invisi-btn" onClick={onNewNote}>
@@ -31,29 +32,34 @@ export default function Navbar({ onNewNote, onNewNotebook }) {
               </button>
             </li>
             <li key={2} className="nav-item">
-              <button className="btn invisi-btn" onClick={onNewNotebook}>
+              <button className="btn invisi-btn">
                 <FaFolderPlus />
                 New Notebook
               </button>
             </li>
           </ul>
-          <form className="d-flex">
-            <input
-              className="form-control me-2"
-              type="search"
-              placeholder="Search"
-              aria-label="Search"
-            />
-            <button className="btn btn-outline-success" type="submit">
-              <FaMagnifyingGlass />
-            </button>
+          {/* Search bar */}
+          <form className="d-flex" onSubmit={onSearch}>
+            <div className="input-group">
+              <input
+                className="form-control me-2"
+                type="search"
+                placeholder="Search"
+                aria-label="Search"
+              />
+              <div className="input-group-append">
+                <button className="btn btn-outline-success" type="submit">
+                  <FaMagnifyingGlass />
+                </button>
+              </div>
+            </div>
           </form>
+          {/* Avatar */}
+          <button className="btn btn-link p-0 m-0 border-0" type="button">
+            <RxAvatar style={{ fontSize: "2em" }} />
+          </button>
           <ul className="navbar-nav">
-            <li key={4} className="nav-item">
-              <button className="btn" type="button">
-                <RxAvatar style={{ fontSize: "2em" }} />
-              </button>
-            </li>
+            <li key={4} className="nav-item"></li>
           </ul>
         </div>
       </div>

@@ -1,21 +1,13 @@
 import { db, auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import {
-  doc,
-  setDoc,
-  getDoc,
-  getDocs,
-  collection,
-  query,
-  limit,
-  where,
-} from "firebase/firestore";
+import { doc, setDoc, getDoc, getDocs, collection } from "firebase/firestore";
 
 const notesRootPromise = new Promise((resolve, reject) => {
   const unsubscribe = onAuthStateChanged(auth, (user) => {
     if (!user) {
-      reject(new Error("No user logged in."));
+      // reject(new Error("No user logged in."));
       console.warn("No user logged in.");
+      return;
     }
     const ref = collection(db, "users", user.uid, "notesRoot");
     resolve(ref);
@@ -23,69 +15,63 @@ const notesRootPromise = new Promise((resolve, reject) => {
   });
 });
 
-/* Tentative Note 'Schema' */
-/* 
-{ 
-  id: string // Equivalent to name
-  type: 'Notebook' | 'Note'
-  content: JSON or String
-  tags: string[]
-}
-*/
-
-/* Tentative Notebook 'Schema' */
-/*
-{
-  id: string // Must match actual subcollection id
-  type: 'Notebook' | 'Note'
-  tags: string[]
-}
-*/
-
 /**
- * Writes to the document at `/cwd/id`. If no document exists, one will be created.
- * @param {string} cwd Current working directory (must end in a document)
+ * Writes to the document at `notesRoot/id`. If no document exists, one will be created.
+ *
+ * If `id` is an empty string, then an ID will be auto-generated.
  * @param {string} id ID of Note
- * @param {Object} newNote { content: string, tags: string[], lastModified: string }
+ * @param {Object} newNote `{ name: string, content: string, tags: string[], timestamp: Date }`
+ * @returns {string} The (possibly auto-generated) id of the pushed document
  */
-export async function pushNote(cwd, id, newNote) {
+export async function pushNote(newNote, id) {
   try {
     const notesRoot = await notesRootPromise;
-    setDoc(doc(notesRoot, cwd, id), newNote, {
+    const noteRef = id ? doc(notesRoot, id) : doc(notesRoot);
+    setDoc(noteRef, newNote, {
       merge: true,
     });
+    return noteRef.id;
   } catch (error) {
     console.warn(error);
+    return "";
   }
 }
 
-export async function pullNote(cwd, id) {
+/**
+ * Returns the note `id` if it exists in the User's collection.
+ * Else, it returns `null`.
+ * @param {string} id ID of Note (Equivalent to name)
+ * @returns Promise<DocumentSnapshot | null>
+ */
+export async function pullNote(id) {
   try {
     const notesRoot = await notesRootPromise;
-    return getDoc(doc(notesRoot, cwd, id));
+    return getDoc(doc(notesRoot, id));
   } catch (error) {
     console.warn(error);
     return null;
   }
 }
 
-export async function pullNotes(path) {
+/**
+ * Retrieves an array of all Notes the User has. The array may be empty.
+ * @returns Promise<QueryDocumentSnapshot[]>
+ */
+async function pullNotes() {
   try {
     const notesRoot = await notesRootPromise;
-    const notes = query(
-      collection(notesRoot, path),
-      where("type", "==", "Note")
-    );
-    return getDocs(notes).then((snapshot) =>
-      snapshot.docs.map((doc) => doc.data)
-    );
+    return getDocs(notesRoot).then((snapshot) => {
+      const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
+      console.log(data);
+      return data;
+    });
   } catch (error) {
     console.warn(error);
     return [];
   }
 }
 
-export async function pullNotebooks(path) {
+async function pullNotebooks(path) {
   try {
     const notesRoot = await notesRootPromise;
     const notebookDetails = query(
@@ -109,7 +95,7 @@ export async function pullNotebooks(path) {
  * @param {string} name Name of Notebook
  * @param {*} newDetails `{type: 'notebook', name: string, tags: Id[]}`
  */
-export async function pushNotebook(cwd, name, newNotebook) {
+async function pushNotebook(cwd, name, newNotebook) {
   try {
     const notesRoot = await notesRootPromise;
     setDoc(doc(notesRoot, cwd, name), newNotebook, { merge: true });
