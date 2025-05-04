@@ -60,7 +60,7 @@ const ResizableImage = Image.extend({
   },
 });
 
-const Editor = ({ id, backToHome, darkMode }) => {
+const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   const [tags, setTags] = useState([]);
 
   const [note, setNote] = useState(null);
@@ -79,17 +79,18 @@ const Editor = ({ id, backToHome, darkMode }) => {
   const editor = useEditor({
     extensions: [
       StarterKit,
-      Bold,
       Color,
       ResizableImage.configure({
         inline: true,
         allowBase64: true,
       }),
-      BulletList,
+      // already in StarterKit
+      // Bold,
+      // BulletList,
+      // Italic,
+      // Strike,
       Underline,
       TextStyle,
-      Italic,
-      Strike,
       FontFamily.configure({
         types: ["textStyle"],
       }),
@@ -302,8 +303,7 @@ const Editor = ({ id, backToHome, darkMode }) => {
     const updatedNotes = savedNotes.filter((n) => String(n.id) !== String(id));
 
     localStorage.setItem("notes", JSON.stringify(updatedNotes));
-    // navigate("/home");
-    backToHome();
+    navigateToHome();
   };
 
   // Adding menu for image resizing
@@ -381,7 +381,7 @@ const Editor = ({ id, backToHome, darkMode }) => {
     savedNotes.push(newNote);
     localStorage.setItem("notes", JSON.stringify(savedNotes));
 
-    // openNewTab(newNote); // new tab
+    openNewNote(newId); // new tab
   };
 
   const handleManualSave = () => {
@@ -428,153 +428,157 @@ const Editor = ({ id, backToHome, darkMode }) => {
   const fonts = ["Arial", "Georgia", "Courier New", "Times New Roman"];
 
   return (
-    <div className={`editor-container ${darkMode ? "dark-mode" : ""}`}>
-      {/* Top Navigation Bar */}
+    <>
       <MenuBar
         onFileNew={handleNewNote}
         onFileSave={handleManualSave}
         onFileDelete={handleDeleteNote}
+        darkMode={darkMode}
+        openNewNote={openNewNote}
       />
-
-      {/* Tool Bar */}
-      <div className="toolbar">
-        <input
-          type="color"
-          onInput={(event) =>
-            editor.chain().focus().setColor(event.target.value).run()
-          }
-          value={editor.getAttributes("textStyle").color}
-          data-testid="setColor"
-        />
-        <button onClick={toggleBold} className="toolbar-button">
-          B
-        </button>
-        <button onClick={toggleItalic} className="toolbar-button">
-          I
-        </button>
-        <button onClick={toggleUnderline} className="toolbar-button">
-          U
-        </button>
-        <button onClick={toggleStrike} className="toolbar-button">
-          S
-        </button>
-        <button
-          onClick={() => editor.chain().focus().toggleBulletList().run()}
-          className={editor.isActive("bulletList") ? "is-active" : ""}
-        >
-          <MdFormatListBulleted />
-        </button>
-        <select
-          type="font"
-          onChange={(event) =>
-            editor.chain().focus().setFontFamily(event.target.value).run()
-          }
-        >
-          {fonts.map((font) => (
-            <option key={font} value={font}>
-              {font}
-            </option>
-          ))}
-        </select>
-
-        <input
-          type="file"
-          ref={fileInputRef}
-          onChange={handleFileChange}
-          accept="image/*"
-          style={{ display: "none" }}
-        />
-
-        <button
-          onClick={handleImageButtonClick}
-          className="toolbar-button"
-          title="Upload Image"
-        >
-          <FaImage />
-        </button>
-
-        {isRecording ? (
-          <button onClick={stopRecording}>
-            <FaCircleStop />
+      <div
+        className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}
+      >
+        {/* Tool Bar */}
+        <div className="toolbar">
+          <input
+            type="color"
+            onInput={(event) =>
+              editor.chain().focus().setColor(event.target.value).run()
+            }
+            value={editor.getAttributes("textStyle").color}
+            data-testid="setColor"
+          />
+          <button onClick={toggleBold} className="toolbar-button">
+            B
           </button>
-        ) : (
-          <button onClick={startRecording}>
-            <FaMicrophone />
+          <button onClick={toggleItalic} className="toolbar-button">
+            I
           </button>
-        )}
-      </div>
+          <button onClick={toggleUnderline} className="toolbar-button">
+            U
+          </button>
+          <button onClick={toggleStrike} className="toolbar-button">
+            S
+          </button>
+          <button
+            onClick={() => editor.chain().focus().toggleBulletList().run()}
+            className={editor.isActive("bulletList") ? "is-active" : ""}
+          >
+            <MdFormatListBulleted />
+          </button>
+          <select
+            type="font"
+            onChange={(event) =>
+              editor.chain().focus().setFontFamily(event.target.value).run()
+            }
+          >
+            {fonts.map((font) => (
+              <option key={font} value={font}>
+                {font}
+              </option>
+            ))}
+          </select>
 
-      {showImageModal && (
-        <div className="image-modal-overlay">
-          <div className="image-modal">
-            <h3>{isResizing ? "Resize Image" : "Upload & Adjust Image"}</h3>
-            <div className="image-preview">
-              <img
-                src={selectedImage}
-                alt="Preview"
-                style={{
-                  maxWidth: "100%",
-                  maxHeight: "300px",
-                  width: `${imageWidth}px`,
-                  height: `${imageHeight}px`,
-                }}
-              />
-            </div>
-            <div className="image-controls">
-              <div className="size-control">
-                <label>Width:</label>
-                <input
-                  type="number"
-                  value={imageWidth}
-                  onChange={(e) => setImageWidth(Number(e.target.value))}
-                  min="50"
-                  max="1000"
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleFileChange}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+
+          <button
+            onClick={handleImageButtonClick}
+            className="toolbar-button"
+            title="Upload Image"
+          >
+            <FaImage />
+          </button>
+
+          {isRecording ? (
+            <button onClick={stopRecording}>
+              <FaCircleStop />
+            </button>
+          ) : (
+            <button onClick={startRecording}>
+              <FaMicrophone />
+            </button>
+          )}
+        </div>
+
+        {showImageModal && (
+          <div className="image-modal-overlay">
+            <div className="image-modal">
+              <h3>{isResizing ? "Resize Image" : "Upload & Adjust Image"}</h3>
+              <div className="image-preview">
+                <img
+                  src={selectedImage}
+                  alt="Preview"
+                  style={{
+                    maxWidth: "100%",
+                    maxHeight: "300px",
+                    width: `${imageWidth}px`,
+                    height: `${imageHeight}px`,
+                  }}
                 />
-                <span>px</span>
               </div>
-              <div className="size-control">
-                <label>Height:</label>
-                <input
-                  type="number"
-                  value={imageHeight}
-                  onChange={(e) => setImageHeight(Number(e.target.value))}
-                  min="50"
-                  max="1000"
-                />
-                <span>px</span>
+              <div className="image-controls">
+                <div className="size-control">
+                  <label>Width:</label>
+                  <input
+                    type="number"
+                    value={imageWidth}
+                    onChange={(e) => setImageWidth(Number(e.target.value))}
+                    min="50"
+                    max="1000"
+                  />
+                  <span>px</span>
+                </div>
+                <div className="size-control">
+                  <label>Height:</label>
+                  <input
+                    type="number"
+                    value={imageHeight}
+                    onChange={(e) => setImageHeight(Number(e.target.value))}
+                    min="50"
+                    max="1000"
+                  />
+                  <span>px</span>
+                </div>
               </div>
-            </div>
-            <div className="modal-buttons">
-              <button
-                onClick={() => {
-                  setShowImageModal(false);
-                  setIsResizing(false);
-                  setSelectedImageId(null);
-                  setSelectedImage(null);
-                }}
-              >
-                Cancel
-              </button>
-              <button onClick={insertImage} className="btn-primary">
-                {isResizing ? "Apply Changes" : "Insert Image"}
-              </button>
+              <div className="modal-buttons">
+                <button
+                  onClick={() => {
+                    setShowImageModal(false);
+                    setIsResizing(false);
+                    setSelectedImageId(null);
+                    setSelectedImage(null);
+                  }}
+                >
+                  Cancel
+                </button>
+                <button onClick={insertImage} className="btn-primary">
+                  {isResizing ? "Apply Changes" : "Insert Image"}
+                </button>
+              </div>
             </div>
           </div>
-        </div>
-      )}
+        )}
 
-      <div className="editor-content">
-        <EditorContent editor={editor} />
-        <div className="audio-stack">
-          {recordedAudios.map((audioData, index) => (
-            <div key={index}>
-              <audio controls src={audioData}></audio>
-              <button onClick={() => handleDeleteAudio(index)}>Delete</button>
-            </div>
-          ))}
+        <div className="editor-content">
+          <EditorContent editor={editor} />
+          <div className="audio-stack">
+            {recordedAudios.map((audioData, index) => (
+              <div key={index}>
+                <audio controls src={audioData}></audio>
+                <button onClick={() => handleDeleteAudio(index)}>Delete</button>
+              </div>
+            ))}
+          </div>
         </div>
       </div>
-    </div>
+    </>
   );
 };
 

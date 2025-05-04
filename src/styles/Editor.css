@@ -19,7 +19,7 @@
   width: 100%; /* Ensures the editor content takes the full width of the container */
   box-sizing: border-box;
   overflow-x: auto;
-  margin-top: 80px; /* Avoid overlap with the top bar */
+  /* margin-top: 80px;  */ /* Avoid overlap with the top bar */
 }
 
 .toolbar {
