@@ -381,7 +381,7 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
     savedNotes.push(newNote);
     localStorage.setItem("notes", JSON.stringify(savedNotes));
 
-    openNewNote(newId); // new tab
+    openNewNote(newId, name); // new tab
   };
 
   const handleManualSave = () => {
@@ -435,6 +435,7 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
         onFileDelete={handleDeleteNote}
         darkMode={darkMode}
         openNewNote={openNewNote}
+        navigateToHome={navigateToHome}
       />
       <div
         className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}

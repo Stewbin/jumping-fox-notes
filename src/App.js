@@ -6,7 +6,7 @@ import DrawingEditor from "./DrawingEditor";
 import "bootstrap/dist/css/bootstrap.css";
 import "bootstrap/dist/js/bootstrap.js";
 import MainEditor from "./pages/Editor";
-import { TabsContainer } from "./pages/TabsContainer";
+import TabsContainer from "./pages/TabsContainer";
 
 const App = () => {
   return (

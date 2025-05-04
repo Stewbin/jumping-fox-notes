@@ -1,5 +1,6 @@
 import React, { useState } from "react";
 // import "../styles/MenuBar.css";
+import fox from "../fox.svg";
 
 export default function MenuBar({
   onFileNew,
@@ -7,6 +8,7 @@ export default function MenuBar({
   onFileDelete,
   darkMode,
   openNewNote,
+  navigateToHome,
 }) {
   const [allNotes, setAllNotes] = useState([]);
   return (
@@ -38,14 +40,6 @@ export default function MenuBar({
               <li>
                 <button onClick={onFileNew} className="dropdown-item">
                   New
-                </button>
-              </li>
-              <li>
-                <button
-                  className="dropdown-item"
-                  onClick={() => alert("TODO: Bring up search modal?")}
-                >
-                  Open
                 </button>
               </li>
               <li>
@@ -82,7 +76,7 @@ export default function MenuBar({
                   key={note.id}
                   className="dropdown-item"
                   onClick={() => {
-                    openNewNote(note);
+                    openNewNote(note.id, note.name);
                   }}
                 >
                   {note.name}
@@ -95,6 +89,15 @@ export default function MenuBar({
             <button className="nav-link active">Edit</button>
           </li>
         </ul>
+
+        {/* Fox brand */}
+        <button
+          className="navbar-brand bg-transparent border-0"
+          onClick={navigateToHome}
+        >
+          <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
+          Jumping Fox
+        </button>
       </div>
     </nav>
   );

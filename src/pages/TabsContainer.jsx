@@ -6,10 +6,10 @@ import MainEditor from "./Editor";
 import "react-tabs/style/react-tabs.css";
 import "../styles/TabsContainer.css";
 
-export function TabsContainer() {
+export default function TabsContainer() {
   const [tabs, setTabs] = useState([
     {
-      id: "home",
+      id: Date.now(),
       title: "Home",
       type: "home",
       noteId: "",
@@ -22,15 +22,15 @@ export function TabsContainer() {
     setDarkMode((prev) => !prev);
   };
 
-  const addTab = () => openNewTab("", "home");
-  const openNewTab = (noteId, type) => {
+  const addHomeTab = () => openNewTab("", "Home", "home");
+  const openNewTab = (noteId, title, type) => {
     setTabs([
       ...tabs.map((tab) => {
         return tab;
       }),
       {
         id: Date.now(),
-        title: `Home`,
+        title,
         type,
         noteId,
       },
@@ -43,19 +43,32 @@ export function TabsContainer() {
   };
 
   /* Tab Content Changing */
-  const openNote = (tabIdx, noteId) => {
+  const openNote = (tabIdx, id, name) => {
+    // Replace `tabs` with whole new array to trigger hook
     setTabs(
       tabs.map((tab, i) => {
         if (i === tabIdx) {
-          tab.noteId = noteId;
+          tab.noteId = id;
           tab.type = "editor";
+          tab.title = name;
         }
         return tab;
       })
     );
   };
-  const backToHome = (tabIdx) => {
-    tabs[tabIdx].type = "home";
+  const backToHome = (tabId) => {
+    console.log(`deleting tab ${tabId}`);
+
+    setTabs(
+      tabs.map((tab) => {
+        if (tab.id === tabId) {
+          tab.type = "home";
+          tab.title = "Home";
+          tab.noteId = "";
+        }
+        return tab;
+      })
+    );
   };
 
   return (
@@ -74,7 +87,7 @@ export function TabsContainer() {
               </button>
             </Tab>
           ))}
-          <button className="btn border-0" onClick={addTab}>
+          <button className="btn border-0" onClick={addHomeTab}>
             +
           </button>
           <button onClick={toggleDarkMode}>
@@ -88,7 +101,7 @@ export function TabsContainer() {
             <TabPanel key={tab.id}>
               {tab.type === "home" && (
                 <Home
-                  onOpenNote={(nid) => openNote(i, nid)}
+                  onOpenNote={(nid, name) => openNote(i, nid, name)}
                   darkMode={darkMode}
                 />
               )}
@@ -97,7 +110,9 @@ export function TabsContainer() {
                   navigateToHome={() => backToHome(tab.id)}
                   id={tab.noteId}
                   darkMode={darkMode}
-                  openNewNote={(noteId) => openNewTab(noteId, "editor")}
+                  openNewNote={(noteId, title) =>
+                    openNewTab(noteId, title, "editor")
+                  }
                 />
               )}
             </TabPanel>

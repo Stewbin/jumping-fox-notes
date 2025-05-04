@@ -52,7 +52,7 @@ export default function Home({ onOpenNote, darkMode }) {
                 title={note.name}
                 tags={note.tags}
                 timestamp={new Date()}
-                onOpenNote={() => onOpenNote(note.id)}
+                onOpenNote={() => onOpenNote(note.id, note.name)}
               />
             </div>
           ))}

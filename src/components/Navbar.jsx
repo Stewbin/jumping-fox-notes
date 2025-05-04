@@ -11,9 +11,9 @@ export default function Navbar({ onNewNote, onSearch }) {
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
       <div className="container ">
-        <a className="navbar-brand" href="/">
+        <span className="navbar-brand">
           <img src={fox} alt="Jumping Fox Notes" className="logo" />
-        </a>
+        </span>
         <button
           className="navbar-toggler"
           type="button"
