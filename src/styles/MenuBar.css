@@ -42,6 +42,7 @@
 .dropdown-content td button:hover {
   background-color: lightgray;
 }
+
 .top-bar {
   position: fixed;
   top: 0;

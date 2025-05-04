@@ -12,33 +12,34 @@ export function TabsContainer() {
       id: "home",
       title: "Home",
       type: "home",
-      active: true,
       noteId: "",
     },
   ]);
+  const [currentTabIndex, setCurrentTabIndex] = useState(0); // Selected tab's index
   // Dark Mode
   const [darkMode, setDarkMode] = useState(false);
   const toggleDarkMode = () => {
     setDarkMode((prev) => !prev);
   };
 
-  const addTab = () => {
+  const addTab = () => openNewTab("", "home");
+  const openNewTab = (noteId, type) => {
     setTabs([
       ...tabs.map((tab) => {
-        tab.active = false;
         return tab;
       }),
       {
         id: Date.now(),
         title: `Home`,
-        type: "home",
-        active: true,
-        noteId: "",
+        type,
+        noteId,
       },
     ]);
+    setCurrentTabIndex(tabs.length); // Set current tab to right most
   };
   const closeTab = (tabId) => {
     setTabs(tabs.filter((tab) => tab.id !== tabId));
+    setCurrentTabIndex(currentTabIndex === 0 ? 0 : currentTabIndex - 1);
   };
 
   /* Tab Content Changing */
@@ -59,7 +60,11 @@ export function TabsContainer() {
 
   return (
     <>
-      <Tabs className="overflow-hidden vh-100">
+      <Tabs
+        className="overflow-hidden vh-100"
+        selectedIndex={currentTabIndex}
+        onSelect={(index) => setCurrentTabIndex(index)}
+      >
         <TabList>
           {tabs.map((tab) => (
             <Tab key={tab.id}>
@@ -73,9 +78,10 @@ export function TabsContainer() {
             +
           </button>
           <button onClick={toggleDarkMode}>
-            {darkMode ? "☀️ Light Mode" : "🌙 Dark Mode"}
+            {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
           </button>
         </TabList>
+
         {/* Tab Contents */}
         <div className="position-relative overflow-scroll h-100">
           {tabs.map((tab, i) => (
@@ -88,9 +94,10 @@ export function TabsContainer() {
               )}
               {tab.type === "editor" && (
                 <MainEditor
-                  backToHome={() => backToHome(tab.id)}
+                  navigateToHome={() => backToHome(tab.id)}
                   id={tab.noteId}
                   darkMode={darkMode}
+                  openNewNote={(noteId) => openNewTab(noteId, "editor")}
                 />
               )}
             </TabPanel>

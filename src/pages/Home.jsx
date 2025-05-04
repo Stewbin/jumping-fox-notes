@@ -40,7 +40,7 @@ export default function Home({ onOpenNote, darkMode }) {
   return (
     <>
       <Navbar onNewNote={handleNewNote} onSearch={handleSearch} />
-      <div className={"container" + (darkMode ? "dark-mode" : "")}>
+      <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">
           <h3 className="m-3">Recent Notes</h3>
         </div>
