@@ -17,6 +17,7 @@ const notesRootPromise = new Promise((resolve, reject) => {
 
 /**
  * Writes to the document at `notesRoot/id`. If no document exists, one will be created.
+ *
  * If `id` is an empty string, then an ID will be auto-generated.
  * @param {string} id ID of Note
  * @param {Object} newNote `{ name: string, content: string, tags: string[], timestamp: Date }`

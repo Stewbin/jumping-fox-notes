@@ -4,18 +4,15 @@ import NoteCard from "../components/NoteCard";
 import Navbar from "../components/Navbar";
 import { pullNotes, pushNote } from "../lib/firestore";
 
-export default function Home() {
+export default function Home({ onOpenNote, darkMode }) {
   const [notes, setNotes] = useState([]);
-  const openNewTab = (note) => {
-    window.open(`/Editor/${note.id}`, "_blank");
-  };
 
   useEffect(() => {
-    // const saved = localStorage.getItem("notes");
-    // setNotes(JSON.parse(saved));
-    pullNotes()
-      .then((saved) => setNotes(saved))
-      .catch((error) => console.error(error));
+    const saved = localStorage.getItem("notes");
+    setNotes(JSON.parse(saved) ?? []);
+    // pullNotes()
+    //   .then((saved) => setNotes(saved))
+    //   .catch((error) => console.error(error));
   }, []);
   const handleNewNote = () => {
     const name = prompt("Enter note name:");
@@ -26,12 +23,14 @@ export default function Home() {
       content: "",
       tags: [],
       timestamp: new Date(),
+      audios: [],
+      id: Date.now(),
     };
 
-    pushNote(newNote, "").then((id) => (newNote["id"] = id));
+    // pushNote(newNote, "");
     const updatedNotes = [...notes, newNote];
     setNotes(updatedNotes);
-    // localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    localStorage.setItem("notes", JSON.stringify(updatedNotes));
   };
 
   const handleSearch = (event, searchText) => {
@@ -41,19 +40,19 @@ export default function Home() {
   return (
     <>
       <Navbar onNewNote={handleNewNote} onSearch={handleSearch} />
-      <div className="container">
+      <div className={"container" + (darkMode ? "dark-mode" : "")}>
         <div className="row">
           <h3 className="m-3">Recent Notes</h3>
         </div>
         <div className="row">
-          {notes.map((note) => (
+          {notes?.map((note) => (
             <div key={note.id} className="col-lg-2 col-md-3 col-sm-6">
               <NoteCard
                 id={note.id}
                 title={note.name}
                 tags={note.tags}
                 timestamp={new Date()}
-                onClick={() => openNewTab(note)}
+                onOpenNote={() => onOpenNote(note.id)}
               />
             </div>
           ))}

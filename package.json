@@ -20,7 +20,6 @@
     "@tiptap/extension-underline": "^2.11.7",
     "@tiptap/react": "^2.11.7",
     "@tiptap/starter-kit": "^2.11.7",
-    "axios": "^1.8.4",
     "bootstrap": "^5.3.3",
     "draft-js": "^0.11.7",
     "expo-av": "^15.0.2",

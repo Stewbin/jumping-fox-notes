@@ -4,6 +4,7 @@ import {
   getAuth,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
+  connectAuthEmulator,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -11,6 +12,7 @@ import {
   setDoc,
   updateDoc,
   getDoc,
+  connectFirestoreEmulator,
 } from "firebase/firestore";
 
 // Your Firebase configuration
@@ -31,12 +33,8 @@ const auth = getAuth(app);
 const db = getFirestore(app);
 
 // If using emulators
-/*
-if (process.env.NODE_ENV === "development") {
-  connectAuthEmulator(auth, "http://127.0.0.1:9099");
-  connectFirestoreEmulator(db, "127.0.0.1", 8080);
-}
-*/
+// connectAuthEmulator(auth, "http://127.0.0.1:9099");
+// connectFirestoreEmulator(db, "127.0.0.1", 8080);
 
 // Export everything your components need
 export {
