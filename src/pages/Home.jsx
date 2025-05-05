@@ -2,34 +2,42 @@ import React, { useState, useEffect } from "react";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
 import Navbar from "../components/Navbar";
+import { pullNotes, pushNote } from "../lib/firestore";
 
-export default function Home({ onOpenNote, darkMode, toggleDarkMode }) {
+export default function Home({ onOpenNote, darkMode, localOnly }) {
   const [notes, setNotes] = useState([]);
 
   useEffect(() => {
-    const saved = localStorage.getItem("notes");
-    setNotes(JSON.parse(saved) ?? []);
-    // pullNotes()
-    //   .then((saved) => setNotes(saved))
-    //   .catch((error) => console.error(error));
-  }, []);
+    if (localOnly) {
+      const saved = localStorage.getItem("notes");
+      setNotes(JSON.parse(saved) ?? []);
+    } else {
+      pullNotes()
+        .then((saved) => setNotes(saved))
+        .catch((error) => console.error(error));
+    }
+  }, [localOnly]);
+
   const handleNewNote = () => {
     const name = prompt("Enter note name:");
     if (!name) return;
 
     const newNote = {
+      id: Date.now(),
       name,
       content: "",
       tags: [],
-      timestamp: new Date(),
       audios: [],
-      id: Date.now(),
+      lastModified: new Date(),
     };
 
-    // pushNote(newNote, "");
     const updatedNotes = [...notes, newNote];
     setNotes(updatedNotes);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    if (localOnly) {
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    } else {
+      pushNote(newNote, "");
+    }
   };
 
   const handleSearch = (event, searchText) => {
@@ -41,7 +49,7 @@ export default function Home({ onOpenNote, darkMode, toggleDarkMode }) {
       <Navbar
         onNewNote={handleNewNote}
         onSearch={handleSearch}
-        toggleDarkMode={toggleDarkMode}
+        onToggleDarkMode
       />
       <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">

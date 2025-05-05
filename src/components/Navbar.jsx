@@ -11,7 +11,8 @@ export default function Navbar({
   onNewNote,
   onSearch,
   darkMode,
-  toggleDarkMode,
+  onToggleDarkMode,
+  onToggleLocalOnly,
 }) {
   return (
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
@@ -41,11 +42,6 @@ export default function Navbar({
                 <FaFolderPlus />
                 New Notebook
               </button>
-            </li>
-          </ul>
-          <ul className="navbar-nav">
-            <li key={4} className="nav-item">
-              <Avatar darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />
             </li>
           </ul>
         </div>

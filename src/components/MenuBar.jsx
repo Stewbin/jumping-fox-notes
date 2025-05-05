@@ -1,7 +1,7 @@
 import React, { useState } from "react";
 // import "../styles/MenuBar.css";
 import fox from "../fox.svg";
-import Avatar from "./Avatar";
+import { pullNotes } from "../lib/firestore";
 
 export default function MenuBar({
   onFileNew,
@@ -10,9 +10,16 @@ export default function MenuBar({
   darkMode,
   openNewNote,
   navigateToHome,
-  toggleDarkMode,
+  localOnly,
 }) {
   const [allNotes, setAllNotes] = useState([]);
+  const getAllNotes = () => {
+    setAllNotes(
+      localOnly
+        ? JSON.parse(localStorage.getItem("notes") || "[]")
+        : pullNotes()
+    );
+  };
   return (
     <nav
       className={
@@ -60,9 +67,7 @@ export default function MenuBar({
           <li className="nav-item dropdown me-3">
             <button
               className="dropdown-toggle nav-link active"
-              onClick={() =>
-                setAllNotes(JSON.parse(localStorage.getItem("notes") ?? "[]"))
-              }
+              onClick={getAllNotes}
               data-bs-toggle="dropdown"
               data-bs-auto-close="outside"
             >
@@ -83,7 +88,7 @@ export default function MenuBar({
                 >
                   {note.name}
                 </li>
-              )) ?? <li className="dropdown-item">No saved notes</li>}
+              )) || <li className="dropdown-item">No saved notes</li>}
             </ul>
           </li>
           {/* Edit Dropdown */}
@@ -94,7 +99,7 @@ export default function MenuBar({
 
         <ul className="navbar-nav">
           {/* Fox brand */}
-          <li className="nav-item">
+          <li className="nav-item me-3">
             <button
               className="navbar-brand bg-transparent border-0"
               onClick={navigateToHome}
@@ -102,9 +107,6 @@ export default function MenuBar({
               <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
               Jumping Fox
             </button>
-          </li>
-          <li className="nav-item">
-            <Avatar darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />
           </li>
         </ul>
       </div>
