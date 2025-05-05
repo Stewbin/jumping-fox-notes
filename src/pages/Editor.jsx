@@ -12,7 +12,15 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
 import { useNavigate } from "react-router-dom";
-import { FaCircleStop, FaMicrophone, FaImage } from "react-icons/fa6";
+import {
+  FaCircleStop,
+  FaMicrophone,
+  FaImage,
+  FaUnderline,
+  FaBold,
+  FaItalic,
+  FaStrikethrough,
+} from "react-icons/fa6";
 
 // for dark mode
 // import "@sinm/react-chrome-tabs/css/chrome-tabs-dark-theme.css";
@@ -451,16 +459,16 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
             data-testid="setColor"
           />
           <button onClick={toggleBold} className="toolbar-button">
-            B
+            <FaBold />
           </button>
           <button onClick={toggleItalic} className="toolbar-button">
-            I
+            <FaItalic />
           </button>
           <button onClick={toggleUnderline} className="toolbar-button">
-            U
+            <FaUnderline />
           </button>
           <button onClick={toggleStrike} className="toolbar-button">
-            S
+            <FaStrikethrough />
           </button>
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}

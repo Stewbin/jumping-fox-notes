@@ -10,3 +10,59 @@
   max-width: 50px;
   max-height: 50px;
 }
+
+/* Profile Picture Styles */
+.profile-btn {
+  position: relative;
+  padding: 0;
+  margin: 0 10px;
+  display: flex;
+  align-items: center;
+  justify-content: center;
+  border: none;
+  background: none;
+  cursor: pointer;
+}
+
+.profile-image {
+  width: 2em;
+  height: 2em;
+  border-radius: 50%;
+  object-fit: cover;
+  border: 2px solid #e0e0e0;
+  transition: border-color 0.2s, transform 0.2s;
+}
+
+.profile-image:hover {
+  border-color: #4a90e2;
+  transform: scale(1.05);
+}
+
+.profile-menu {
+  position: absolute;
+  top: 100%;
+  right: 0;
+  min-width: 200px;
+  background-color: white;
+  border-radius: 4px;
+  box-shadow: 0 2px 10px rgba(0, 0, 0, 0.1);
+  padding: 8px 0;
+  z-index: 1000;
+}
+
+.profile-menu-item {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  width: 100%;
+  text-align: left;
+  padding: 8px 16px;
+  border: none;
+  background: none;
+  cursor: pointer;
+  transition: background-color 0.2s;
+}
+
+.profile-menu-item:hover {
+  background-color: #f5f5f5;
+}

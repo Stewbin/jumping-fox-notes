@@ -5,7 +5,6 @@ import {
   FaMagnifyingGlass,
 } from "react-icons/fa6";
 import fox from "../fox.svg";
-import { RxAvatar } from "react-icons/rx";
 
 export default function Navbar({ onNewNote, onSearch }) {
   return (
@@ -54,10 +53,6 @@ export default function Navbar({ onNewNote, onSearch }) {
               </div>
             </div>
           </form>
-          {/* Avatar */}
-          <button className="btn btn-link p-0 m-0 border-0" type="button">
-            <RxAvatar style={{ fontSize: "2em" }} />
-          </button>
           <ul className="navbar-nav">
             <li key={4} className="nav-item"></li>
           </ul>

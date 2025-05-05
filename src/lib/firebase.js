@@ -5,6 +5,7 @@ import {
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   connectAuthEmulator,
+  signOut,
 } from "firebase/auth";
 import {
   getFirestore,
@@ -14,6 +15,7 @@ import {
   getDoc,
   connectFirestoreEmulator,
 } from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Your Firebase configuration
 let firebaseConfig = {
@@ -31,19 +33,24 @@ const app = initializeApp(firebaseConfig);
 // Initialize services
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
 
 // If using emulators
 // connectAuthEmulator(auth, "http://127.0.0.1:9099");
 // connectFirestoreEmulator(db, "127.0.0.1", 8080);
 
+const logOut = () => signOut(auth); // Signs out the current user
+
 // Export everything your components need
 export {
   auth,
   db,
+  storage,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   doc,
   setDoc,
   getDoc,
   updateDoc,
+  logOut,
 };

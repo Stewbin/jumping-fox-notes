@@ -57,7 +57,7 @@ export async function pullNote(id) {
  * Retrieves an array of all Notes the User has. The array may be empty.
  * @returns Promise<QueryDocumentSnapshot[]>
  */
-export async function pullNotes() {
+async function pullNotes() {
   try {
     const notesRoot = await notesRootPromise;
     return getDocs(notesRoot).then((snapshot) => {
@@ -70,3 +70,86 @@ export async function pullNotes() {
     return [];
   }
 }
+
+// async function pullNotebooks(path) {
+//   try {
+//     const notesRoot = await notesRootPromise;
+//     const notebookDetails = query(
+//       collection(notesRoot, path),
+//       where("type", "==", "Notebook"),
+//       limit(1)
+//     );
+//     return getDocs(notebookDetails).then((snapshot) =>
+//       snapshot.docs.map((doc) => doc.data)
+//     );
+//   } catch (error) {
+//     console.warn(error);
+//     return [];
+//   }
+// }
+
+/**
+ * Modify the corresponding Notebook-Details document of a notebook.
+ * If no document exists, one will be created.
+ * @param {string} cwd (must end in a collection)
+ * @param {string} name Name of Notebook
+ * @param {*} newDetails `{type: 'notebook', name: string, tags: Id[]}`
+ */
+async function pushNotebook(cwd, name, newNotebook) {
+  try {
+    const notesRoot = await notesRootPromise;
+    setDoc(doc(notesRoot, cwd, name), newNotebook, { merge: true });
+  } catch (error) {
+    console.warn(error);
+  }
+}
+
+// export async function setNotebookDetails(cwd, name, newDetails) {
+//   const notebookDetails = query(
+//     collection(notesRoot, cwd, name),
+//     // where("name", "==", name),
+//     where("type", "==", "Notebook"),
+//     limit(1)
+//   );
+//   const detailsRef = await getDocs(notebookDetails)
+//     .then((snapshot) => snapshot.docs)
+//     .then((docs) => (docs.empty ? doc(notesRoot, cwd) : docs[0].ref))
+//     .catch((error) => console.error(error));
+
+//   setDoc(detailsRef, newDetails);
+// }
+
+/**
+ * Returns array of all documents in the Notebook `/cwd/name`
+ * @param {string} cwd Current working directory
+ * @param {string} name _Name_ of Notebook
+ * @returns
+ */
+// export async function getNotebookContents(cwd, name) {
+//   if (!user) {
+//     alert("No user logged in.");
+//     return null;
+//   }
+//   // Get notebook id from dupe file
+//   const notebookDetails = query(
+//     collection(notesRoot, cwd),
+//     where("name", "==", name),
+//     where("type", "==", "Notebook"),
+//     limit(1)
+//   );
+//   try {
+//     const notebookIds = (await getDocs(notebookDetails)).docs.map(
+//       (doc) => doc.id
+//     );
+//     if (!notebookIds) {
+//       return [];
+//     }
+//     // Query collection `notebookId`
+//     return getDocs(collection(notesRoot, cwd, notebookIds[0])).then(
+//       (querySnapShot) => querySnapShot.docs.map((doc) => doc.data)
+//     );
+//   } catch (error) {
+//     console.error(error);
+//     return [];
+//   }
+// }
