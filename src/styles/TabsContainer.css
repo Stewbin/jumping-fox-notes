@@ -1,0 +1,36 @@
+.react-tabs__tab--selected {
+  border-bottom: 2px solid white;
+  color: black;
+  background-color: white !important;
+  border-top: 3px solid blue;
+}
+
+.dark-mode .react-tabs__tab--selected {
+  background-color: #2c2c2c !important;
+  color: white;
+  border-bottom: none !important ;
+}
+.note-tabs {
+  position: fixed;
+  top: 44px; /* Adjust this value based on the height of your nav bar */
+  left: 70px;
+  width: 100%;
+  height: auto;
+  background-color: white;
+  color: black;
+  display: flex;
+  gap: 0px;
+  z-index: 1000;
+  border-bottom: 2px solid black;
+  justify-content: flex-start;
+}
+.note-tabs .react-tabs__tab {
+  background-color: lightgrey;
+  border-radius: 0;
+  padding: px 30px; /* wider horizontally */
+  min-width: 150px; /* optional fixed minimum width */
+  text-align: center;
+}
+.dark-mode .note-tabs {
+  background-color: grey;
+}
