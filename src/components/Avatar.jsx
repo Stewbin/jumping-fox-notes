@@ -29,7 +29,7 @@ export default function Avatar({
     } catch (error) {
       console.log("No profile picture found or error fetching it:", error);
       // Use default avatar when no picture is found
-      setProfilePic(null);
+      setProfilePic(blankAvatar);
     }
   };
 

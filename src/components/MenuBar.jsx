@@ -14,11 +14,11 @@ export default function MenuBar({
 }) {
   const [allNotes, setAllNotes] = useState([]);
   const getAllNotes = () => {
-    setAllNotes(
-      localOnly
-        ? JSON.parse(localStorage.getItem("notes") || "[]")
-        : pullNotes()
-    );
+    if (localOnly) {
+      setAllNotes(JSON.parse(localStorage.getItem("notes") || "[]"));
+    } else {
+      pullNotes().then((notes) => setAllNotes(notes));
+    }
   };
   return (
     <nav
