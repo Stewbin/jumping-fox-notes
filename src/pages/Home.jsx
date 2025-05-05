@@ -3,7 +3,7 @@ import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
 import Navbar from "../components/Navbar";
 
-export default function Home({ onOpenNote, darkMode }) {
+export default function Home({ onOpenNote, darkMode, toggleDarkMode }) {
   const [notes, setNotes] = useState([]);
 
   useEffect(() => {
@@ -38,7 +38,11 @@ export default function Home({ onOpenNote, darkMode }) {
   };
   return (
     <>
-      <Navbar onNewNote={handleNewNote} onSearch={handleSearch} />
+      <Navbar
+        onNewNote={handleNewNote}
+        onSearch={handleSearch}
+        toggleDarkMode={toggleDarkMode}
+      />
       <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">
           <h3 className="m-3">Recent Notes</h3>
