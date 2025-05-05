@@ -1,16 +1,30 @@
 // Import all required Firebase services
 import { initializeApp } from "firebase/app";
-import { getAuth, signInWithEmailAndPassword, createUserWithEmailAndPassword } from "firebase/auth";
-import { getFirestore, doc, setDoc } from "firebase/firestore";
+import {
+  getAuth,
+  signInWithEmailAndPassword,
+  createUserWithEmailAndPassword,
+  connectAuthEmulator,
+  signOut,
+} from "firebase/auth";
+import {
+  getFirestore,
+  doc,
+  setDoc,
+  updateDoc,
+  getDoc,
+  connectFirestoreEmulator,
+} from "firebase/firestore";
+import { getStorage } from "firebase/storage";
 
 // Your Firebase configuration
-const firebaseConfig = {
+let firebaseConfig = {
   apiKey: "AIzaSyCYIFhBAqMaM4GQJTc6EaekQXsq5KiWBDE",
   authDomain: "jumping-fox-notes.firebaseapp.com",
   projectId: "jumping-fox-notes",
   storageBucket: "jumping-fox-notes.firebasestorage.app",
   messagingSenderId: "986976785621",
-  appId: "1:986976785621:web:a406d6801721cd2717fe5c"
+  appId: "1:986976785621:web:a406d6801721cd2717fe5c",
 };
 
 // Initialize Firebase
@@ -19,13 +33,24 @@ const app = initializeApp(firebaseConfig);
 // Initialize services
 const auth = getAuth(app);
 const db = getFirestore(app);
+const storage = getStorage(app);
+
+// If using emulators
+// connectAuthEmulator(auth, "http://127.0.0.1:9099");
+// connectFirestoreEmulator(db, "127.0.0.1", 8080);
+
+const logOut = () => signOut(auth); // Signs out the current user
 
 // Export everything your components need
-export { 
+export {
   auth,
   db,
+  storage,
   signInWithEmailAndPassword,
   createUserWithEmailAndPassword,
   doc,
-  setDoc
+  setDoc,
+  getDoc,
+  updateDoc,
+  logOut,
 };
