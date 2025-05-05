@@ -71,22 +71,22 @@ async function pullNotes() {
   }
 }
 
-async function pullNotebooks(path) {
-  try {
-    const notesRoot = await notesRootPromise;
-    const notebookDetails = query(
-      collection(notesRoot, path),
-      where("type", "==", "Notebook"),
-      limit(1)
-    );
-    return getDocs(notebookDetails).then((snapshot) =>
-      snapshot.docs.map((doc) => doc.data)
-    );
-  } catch (error) {
-    console.warn(error);
-    return [];
-  }
-}
+// async function pullNotebooks(path) {
+//   try {
+//     const notesRoot = await notesRootPromise;
+//     const notebookDetails = query(
+//       collection(notesRoot, path),
+//       where("type", "==", "Notebook"),
+//       limit(1)
+//     );
+//     return getDocs(notebookDetails).then((snapshot) =>
+//       snapshot.docs.map((doc) => doc.data)
+//     );
+//   } catch (error) {
+//     console.warn(error);
+//     return [];
+//   }
+// }
 
 /**
  * Modify the corresponding Notebook-Details document of a notebook.

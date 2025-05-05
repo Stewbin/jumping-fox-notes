@@ -5,6 +5,8 @@ import Home from "./Home";
 import MainEditor from "./Editor";
 import "react-tabs/style/react-tabs.css";
 import "../styles/TabsContainer.css";
+import Avatar from "../components/Avatar";
+import blankAvatar from "../blank avatar.png";
 
 export default function TabsContainer() {
   const [tabs, setTabs] = useState([
@@ -57,8 +59,6 @@ export default function TabsContainer() {
     );
   };
   const backToHome = (tabId) => {
-    console.log(`deleting tab ${tabId}`);
-
     setTabs(
       tabs.map((tab) => {
         if (tab.id === tabId) {
@@ -71,6 +71,8 @@ export default function TabsContainer() {
     );
   };
 
+  const profilePic = ""; // TODO: Fetch pfp
+
   return (
     <>
       <Tabs
@@ -82,17 +84,22 @@ export default function TabsContainer() {
           {tabs.map((tab) => (
             <Tab key={tab.id}>
               {tab.title}
-              <button className="btn" onClick={() => closeTab(tab.id)}>
-                x
-              </button>
+              <button
+                className="btn btn-close"
+                onClick={() => closeTab(tab.id)}
+              ></button>
             </Tab>
           ))}
           <button className="btn border-0" onClick={addHomeTab}>
             +
           </button>
-          <button onClick={toggleDarkMode}>
-            {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
-          </button>
+
+          <Avatar
+            profilePic={profilePic || blankAvatar}
+            darkMode={darkMode}
+            onToggleDarkMode={toggleDarkMode}
+            className="align-self-end"
+          />
         </TabList>
 
         {/* Tab Contents */}
