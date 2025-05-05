@@ -1,6 +1,7 @@
 import React, { useState } from "react";
 // import "../styles/MenuBar.css";
 import fox from "../fox.svg";
+import Avatar from "./Avatar";
 
 export default function MenuBar({
   onFileNew,
@@ -9,6 +10,7 @@ export default function MenuBar({
   darkMode,
   openNewNote,
   navigateToHome,
+  toggleDarkMode,
 }) {
   const [allNotes, setAllNotes] = useState([]);
   return (
@@ -90,14 +92,21 @@ export default function MenuBar({
           </li>
         </ul>
 
-        {/* Fox brand */}
-        <button
-          className="navbar-brand bg-transparent border-0"
-          onClick={navigateToHome}
-        >
-          <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
-          Jumping Fox
-        </button>
+        <ul className="navbar-nav">
+          {/* Fox brand */}
+          <li className="nav-item">
+            <button
+              className="navbar-brand bg-transparent border-0"
+              onClick={navigateToHome}
+            >
+              <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
+              Jumping Fox
+            </button>
+          </li>
+          <li className="nav-item">
+            <Avatar darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />
+          </li>
+        </ul>
       </div>
     </nav>
   );

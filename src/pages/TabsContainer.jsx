@@ -6,7 +6,6 @@ import MainEditor from "./Editor";
 import "react-tabs/style/react-tabs.css";
 import "../styles/TabsContainer.css";
 import Avatar from "../components/Avatar";
-import blankAvatar from "../blank avatar.png";
 
 export default function TabsContainer() {
   const [tabs, setTabs] = useState([
@@ -24,7 +23,6 @@ export default function TabsContainer() {
     setDarkMode((prev) => !prev);
   };
 
-  const addHomeTab = () => openNewTab("", "Home", "home");
   const openNewTab = (noteId, title, type) => {
     setTabs([
       ...tabs.map((tab) => {
@@ -39,6 +37,7 @@ export default function TabsContainer() {
     ]);
     setCurrentTabIndex(tabs.length); // Set current tab to right most
   };
+  const addHomeTab = () => openNewTab("", "Home", "home");
   const closeTab = (tabId) => {
     setTabs(tabs.filter((tab) => tab.id !== tabId));
     setCurrentTabIndex(currentTabIndex === 0 ? 0 : currentTabIndex - 1);
@@ -93,13 +92,6 @@ export default function TabsContainer() {
           <button className="btn border-0" onClick={addHomeTab}>
             +
           </button>
-
-          <Avatar
-            profilePic={profilePic || blankAvatar}
-            darkMode={darkMode}
-            onToggleDarkMode={toggleDarkMode}
-            className="align-self-end"
-          />
         </TabList>
 
         {/* Tab Contents */}
@@ -110,6 +102,7 @@ export default function TabsContainer() {
                 <Home
                   onOpenNote={(nid, name) => openNote(i, nid, name)}
                   darkMode={darkMode}
+                  toggleDarkMode={toggleDarkMode}
                 />
               )}
               {tab.type === "editor" && (
@@ -120,6 +113,7 @@ export default function TabsContainer() {
                   openNewNote={(noteId, title) =>
                     openNewTab(noteId, title, "editor")
                   }
+                  toggleDarkMode={toggleDarkMode}
                 />
               )}
             </TabPanel>
