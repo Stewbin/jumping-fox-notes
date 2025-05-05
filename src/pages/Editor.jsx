@@ -20,6 +20,8 @@ import {
   FaBold,
   FaItalic,
   FaStrikethrough,
+  FaPencil,
+
 } from "react-icons/fa6";
 
 // for dark mode
@@ -429,6 +431,9 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
+  const SwitchToDrawingEditor = () => {
+    navigate("/drawingeditor")
+  };
 
   if (!editor) {
     return null;
@@ -470,6 +475,11 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
           <button onClick={toggleStrike} className="toolbar-button">
             <FaStrikethrough />
           </button>
+
+          <button onClick={SwitchToDrawingEditor} className="toolbar-button">
+          <FaPencil/>
+          </button>
+
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={editor.isActive("bulletList") ? "is-active" : ""}
