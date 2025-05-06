@@ -3,18 +3,31 @@ import React, { useRef, useEffect, useLayoutEffect, useState, createElement, act
 //install perfectfreehand : npm install perfect-freehand
 import rough from 'roughjs/bundled/rough.esm';
 import getStroke from 'perfect-freehand';
-import { saveDrawing, loadDrawing, auth } from "/Users/onariromain/jumping-fox-notes/src/lib/firebase.js";
+import { saveDrawing, loadDrawing, auth } from "../lib/firebase";
 //I will add comments later
 import {
-  FaPencil,
+  FaPencil,FaTrashCan,
 
 } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
-
+import { onAuthStateChanged } from "firebase/auth";
+import { NodeViewWrapper } from '@tiptap/react';
+import "../styles/Editor.css";
 const generator = rough.generator();
 
-const DrawingEditor = () => {
+const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
   
+  const exitDrawing = () => {
+    updateAttributes({ elements })
+    const pos = getPos()
+    editor
+      .chain()
+      .focus()
+      .setTextSelection(pos + node.nodeSize)
+      .run()
+  }
+
+
   const [elements, setElements, undo, redo] = useHistory([]);
   const [action, setAction] = useState('none'); 
   const [tool, setTool] = useState("line");
@@ -22,8 +35,21 @@ const DrawingEditor = () => {
   const [stroke,setStroke] = useState(1);
   const [eraserRadius, setEraserRadius] = useState(10);
   const navigate = useNavigate();
-  
+  const [drawingId, setDrawingId] = useState(null);
+  const canvasRef = useRef(null);
+  const isDrawingSelected = editor.isActive('drawing')
 
+  useEffect(() => {
+    const unsub = onAuthStateChanged(auth, (user) => {
+      if (user) {
+        setDrawingId(user.uid);
+      } else {
+        navigate("/login", { replace: true });
+      }
+    });
+    return unsub;
+  }, [navigate]);
+  
 
   useEffect(() => {
     const undoRedoFunction = event => {
@@ -41,37 +67,34 @@ const DrawingEditor = () => {
     };
   }, [undo, redo]);
 
-  const drawingId = auth.currentUser?.uid || "anonymous";
-  useEffect(() => {
-    if (!auth.currentUser) return;
-
-    const id = auth.currentUser.uid;
-    (async () => {
-    try {
-      
-      const data = await loadDrawing(id);
-      if (data?.elements) {
-        setElements(data.elements, true);
-      }
-      
-    } catch (err) {
-      console.error("loadDrawing failed:", err);
-    }
-  })();
-}, [setElements]);
-
+ 
 
 
   useLayoutEffect(() => {
-    const canvas = document.getElementById("canvas");
+
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+
     const context = canvas.getContext("2d");
     context.clearRect(0,0, canvas.width, canvas.height);
+    if (!Array.isArray(elements)) return;
     const roughCanvas = rough.canvas(canvas);
+    
     elements
     .filter(el => !el.erased)
     .forEach(el => drawElement(roughCanvas, context, el, stroke));
     
   }, [elements,stroke]);
+
+  const stop = e => {
+    e.preventDefault();
+    e.stopPropagation();
+  };
+  if (!isDrawingSelected) {
+    return null;
+  }
+  
+  
 
   const updateElement = (id, x1,y1,x2,y2,type) => {
     const elementsCopy = [...elements];
@@ -91,58 +114,93 @@ const DrawingEditor = () => {
 
 
   }
-
+  function getRelativeCoords(event) {
+    const { left, top } = canvasRef.current.getBoundingClientRect();
+    return {
+      clientX: event.clientX - left,
+      clientY: event.clientY - top,
+    };
+  }
   const handleSave = async () => {
-    const element = elements.map(el => {
-      const base = {
-        id:          el.id,
-        x1:          el.x1,
-        y1:          el.y1,
-        x2:          el.x2,
-        y2:          el.y2,
-        type:        el.type,
-        strokeWidth: el.strokeWidth,
-      };
-      if (el.points) base.points = el.points;
-      if (el.erased !== undefined) base.erased = el.erased;
-      
-      return base;
-    });
-    await saveDrawing(drawingId, element);
-  };
+     console.log("drawingId=", drawingId);
 
-  const handleLoad = async () => {
-    const data = await loadDrawing(drawingId);
-    if (!data?.elements) {
-      alert("No saved drawing found.");
-      return;
+  if (!drawingId) {
+    console.error("No drawingId not found");
+    return;
+  }
+
+  
+  const savedElements = elements.map(el => {
+    const base = { id: el.id, type: el.type, strokeWidth: el.strokeWidth };
+    if (el.type === "line" || el.type === "rectangle") {
+      base.x1 = el.x1; base.y1 = el.y1;
+      base.x2 = el.x2; base.y2 = el.y2;
     }
-    const restored = data.elements.map(el => {
-      if (el.type === "line" || el.type === "rectangle") {
-        // these recreate the roughElement internally
-        return CreateElement(
-          el.id, el.x1, el.y1, el.x2, el.y2, el.type, el.strokeWidth
-        );
+    if (el.points) base.points = el.points;
+    if (el.erased !== undefined) base.erased = el.erased;
+    return base;
+  });
+
+  console.log("savingElements:", savedElements);
+
+  try {
+    await saveDrawing(drawingId, savedElements);
+    console.log("saveDrawing succeeded");
+    alert("Drawing saved!");
+  } catch (err) {
+    console.error("saveDrawing failed", err);
+    alert("Save failed—check console");
+  }
+};
+
+    const handleLoad = async () => {
+      const data = await loadDrawing(drawingId);
+      if (!data?.elements) {
+        alert("No saved drawing found.");
+        return;
+      }
+      const restored = data.elements.map(el => {
+        if (el.type === "line" || el.type === "rectangle") {
+          // these recreate the roughElement internally
+          return CreateElement(
+            el.id, el.x1, el.y1, el.x2, el.y2, el.type, el.strokeWidth
+          );
       }
       if (el.type === "pencil") {
-        // pencil strokes only need points + width
+        
         return { ...el };
       }
       return el;
       
   });
-  setElements(restored, /* overwrite= */ true);
+  setElements(restored, true);
 }
 
+  const handleExportImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+  
+    // for PNG:
+    const dataURL = canvas.toDataURL('image/png');
+  
+    // Trigger a download
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'drawing.png';   
+    a.click();
+  }
+
+
   const handleMouseDown = (event) =>{
-    const {clientX,clientY } = event;
+    if (!isDrawingSelected) return 
+    const {clientX,clientY } = getRelativeCoords(event);
       if (tool === "eraser") {
       setAction("erasing");
       setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
       return;
   }
     if (tool == "Selection"){
-      //if on element 
+    
       const element = getElementAtPosition(clientX,clientY,elements);
       if (element){
         const offsetX = clientX - element.x1;
@@ -174,7 +232,8 @@ const DrawingEditor = () => {
 
 
   const handleMouseMove = (event) =>{
-    const{clientX, clientY} = event;
+    if (!isDrawingSelected) return 
+    const{clientX, clientY} = getRelativeCoords(event);
     if (tool == "Selection"){
       const element = getElementAtPosition(clientX,clientY,elements);
       event.target.style.cursor = element
@@ -213,6 +272,7 @@ const DrawingEditor = () => {
 
 
   const handleMouseUp = (event) =>{
+    if (!isDrawingSelected) return 
     if (selectedElement){
     const index = elements.length -1;
     const {id, type} = elements[index];
@@ -230,100 +290,97 @@ const DrawingEditor = () => {
     navigate("/home")
   };
 
+  const ClearPage = () => {
+    setAction("none");
+    setSelectedElement(null);
+    setElements([], true);
+  }
+
 
   return(
-  <div>
-    <button onClick={SwitchToDrawingEditor} className="toolbar-button">
-    <FaPencil/>
-    </button>
-    
-    <button onClick={handleSave}>Save</button>
-    <button onClick={handleLoad}>Load</button>
-    <div style ={{position: "fixed"}}>
-    <input 
-    type ="radio"
-    id = "Line"
-    checked={tool =="line"}
-    onChange={() => setTool("line")}
-    />
-    < label htmlFor ="Line">Line</label>
+    <NodeViewWrapper
+    className="drawing-node-view"
+    contentEditable={false}    // make the whole node non‑editable
+    draggable={false}
+  >
+     {/* intercepts before ProseMirror */}
+     <canvas
+      ref={canvasRef}
+      width={window.innerWidth}
+      height={window.innerHeight}
 
-    <input 
-    type ="radio"
-    id = "Selection"
-    checked={tool =="Selection"}
-    onChange={() => setTool("Selection")}
+      onMouseDown={e => { stop(e); handleMouseDown(e); }}
+      onMouseMove={e => { stop(e); handleMouseMove(e); }}
+      onMouseUp  ={e => { stop(e); handleMouseUp(e); }}
+
+      style={{
+        position: 'relative',  
+        zIndex: 0,
+      }}
     />
-    < label htmlFor ="Selection">Selection</label>
-    <input
-    type="radio"
-    id="rectangle"
-    checked={tool =="rectangle"}
-    onChange={()=>setTool("rectangle")}
-    />
-    < label htmlFor ="rectangle">rectangle</label>
+ 
+  <button
+    onMouseDown={stop}
+    className={tool === "line" ? "is-active toolbar-button" : "toolbar-button"}
+    onClick={() => setTool("line")}
+  >
+    Line
+  </button>
+
+  <button
+    onMouseDown={stop}
+    className={tool === "rectangle" ? "is-active toolbar-button" : "toolbar-button"}
+    onClick={() => setTool("rectangle")}
+  >
+    Rect
+  </button>
+
+  <button
+    onMouseDown={stop}
+    
+    className={tool === "pencil" ? "is-active toolbar-button" : "toolbar-button"}
+    onClick={() => setTool("pencil")}
+  >
+    Pen
+  </button>
+  
+
+  <button
+    onMouseDown={stop}
+    className="toolbar-button"
+    onClick={handleSave}
+  >
+    Save
+  </button>
+
+  <button
+    onMouseDown={stop}
+    className="toolbar-button"
+    onClick={handleLoad}
+  >
+    Load
+  </button>
+
+  <button
+    onMouseDown={stop}
+    className="toolbar-button"
+    onClick={ClearPage}
+  >
+    <FaTrashCan/>
+  </button>
+
+  <button onMouseDown={stop} className="toolbar-button" onClick={handleExportImage}>
+  Export Drawing
+  </button>
+
+  <button onMouseDown={e => e.preventDefault()} onClick={exitDrawing}>
+          Exit
+        </button>
+ 
 
    
-    <input
-    type="radio"
-    id="pencil"
-    checked={tool =="pencil"}
-    onChange={()=>setTool("pencil")}
-    />
-    < label htmlFor ="pencil">Pencil</label>
+  </NodeViewWrapper>
 
-    <input
-    type="radio"
-    id="eraser"
-    checked={tool =="eraser"}
-    onChange={()=>setTool("eraser")}
-    />
-    < label htmlFor ="eraser">Eraser</label>
-
-
-    <div>
-
-    <label>
-    Eraser size
-    <input
-    type="range"
-    min="5"
-    max="50"
-    value={eraserRadius}
-    onChange={e => setEraserRadius(e.target.value)}
-    />
-</label>
-<label htmlFor="brushStroke">brush Stroke</label>
-    <input type="range" id="brushStroke" name="brushStroke" min="1" max="50"   onChange={(e) => setStroke(Number(e.target.value))}/>
-
-  </div>
-
-
-
-    </div>
-
-    <div style ={{position: "fixed", bottom: 10}}>
-      <br></br>
-      <button onClick={undo}>Undo</button>
-      <button onClick={redo}>Redo</button>
-    </div>
-
-
-
-
-    <canvas id = "canvas" 
-  width = {window.innerWidth}
-  height = {window.innerHeight}
-  onMouseDown={handleMouseDown}
-  onMouseMove={handleMouseMove}
-  onMouseUp={handleMouseUp}
-  >
-
-  </canvas>
-
-    
-  </div>
-  
 );};
 
 function CreateElement(id,x1,y1, x2, y2, type,strokeSize){
@@ -379,6 +436,7 @@ const getElementAtPosition = (x,y,element)=>{
   .find(element => element.position != null);
 
 }
+
 
 const adjustElementCoordinates = element => {
   const{type,x1,y1,x2,y2} = element;
@@ -460,10 +518,10 @@ const drawElement = (roughCanvas, context, element,size) =>{
   switch(element.type){
       case "line":
       case "rectangle":
-      roughCanvas.draw(element.roughElement,{size:element})
+      roughCanvas.draw(element.roughElement)
         break;
         case "pencil":
-          const rawStroke = getStroke(element.points, { size:element.strokeWidth });
+          const rawStroke = getStroke(element.points);
           const stroke = getSvgPathFromStroke(rawStroke);
           context.fill(new Path2D(stroke))
           break;

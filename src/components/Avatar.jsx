@@ -1,6 +1,6 @@
 import React, { useState, useRef, useEffect } from "react";
 import { logOut } from "../lib/firebase";
-import { Link, useNavigate } from "react-router-dom";
+import { useNavigate } from "react-router-dom";
 import "../styles/Avatar.css";
 import { onAuthStateChanged } from "firebase/auth";
 import { ref, uploadBytes, getDownloadURL } from "firebase/storage";
@@ -8,7 +8,12 @@ import { FaUpload } from "react-icons/fa6";
 import blankAvatar from "../blank avatar.png";
 import { storage, auth } from "../lib/firebase";
 
-export default function Avatar({ onToggleDarkMode, darkMode }) {
+export default function Avatar({
+  onToggleDarkMode,
+  darkMode,
+  onToggleLocalOnly,
+  localOnly,
+}) {
   const navigate = useNavigate();
   const [profilePic, setProfilePic] = useState(blankAvatar);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -24,7 +29,7 @@ export default function Avatar({ onToggleDarkMode, darkMode }) {
     } catch (error) {
       console.log("No profile picture found or error fetching it:", error);
       // Use default avatar when no picture is found
-      setProfilePic(null);
+      setProfilePic(blankAvatar);
     }
   };
 
@@ -85,104 +90,54 @@ export default function Avatar({ onToggleDarkMode, darkMode }) {
   }, []);
 
   return (
-    <>
-      {/* Expand offcanvas button */}
+    <div id="avatar">
+      {/* Change Profile Pic */}
       <button
-        className="btn btn-link p-0 m-0 border-0"
+        className="bt profile-btn"
         type="button"
-        data-bs-toggle="offcanvas"
-        data-bs-target="#account-settings"
-        aria-controls="offcanvasExample"
+        onClick={() => setShowProfileMenu(!showProfileMenu)}
       >
-        <img
-          src={profilePic}
-          alt="Avatar"
-          className="rounded-circle shadow-4"
-          id="profile-pic"
-        />
+        <img src={profilePic} alt="Profile" className="profile-image" />
       </button>
-      {/* Offcanvas */}
-      <div
-        className="offcanvas offcanvas-end"
-        data-bs-scroll="true"
-        data-bs-backdrop="true"
-        tabIndex="-1"
-        id="account-settings"
-        aria-labelledby="offcanvasLabel"
-      >
-        <div className="offcanvas-header">
-          <h5 className="offcanvas-title" id="offcanvasLabel">
-            Account
-          </h5>
-          <button
-            type="button"
-            className="btn-close text-reset"
-            data-bs-dismiss="offcanvas"
-            aria-label="Close"
-          ></button>
-        </div>
-        <div className="offcanvas-body" style={{ textAlign: "center" }}>
-          {/* Change Profile Pic */}
-          <button
-            className="bt profile-btn"
-            type="button"
-            onClick={() => setShowProfileMenu(!showProfileMenu)}
-          >
-            <img
-              src={profilePic}
-              alt="Profile"
-              className="profile-image"
-              style={{
-                borderRadius: "50%",
-                objectFit: "cover",
-              }}
-            />
-          </button>
 
-          {/* Profile Menu */}
-          {true && (
-            <div className="profile-menu">
-              <input
-                type="file"
-                ref={fileInputRef}
-                onChange={handleProfilePicUpload}
-                accept="image/*"
-                style={{ display: "none" }}
-              />
-              <button
-                className="profile-menu-item"
-                onClick={handleUploadButtonClick}
-              >
-                <FaUpload /> Upload Profile Picture
-              </button>
-            </div>
-          )}
-          <ul className="list-group list-group-flush mt-3">
-            <li className="list-group-item">
-              <button className="btn" onClick={onToggleDarkMode}>
-                {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
-              </button>
-            </li>
-            <li className="list-group-item">
-              <Link className="btn" to={"/404"}>
-                Settings
-              </Link>
-            </li>
-            <li className="list-group-item">
-              <button
-                className="btn"
-                onClick={() =>
-                  logOut()
-                    .then(() => navigate("/"))
-                    .catch((error) => console.error(error))
-                }
-              >
-                Log out
-              </button>
-            </li>
-          </ul>
+      {/* Profile Menu */}
+      {showProfileMenu && (
+        <div className="profile-menu">
+          {/* Upload profile pic */}
+          <input
+            type="file"
+            ref={fileInputRef}
+            onChange={handleProfilePicUpload}
+            accept="image/*"
+            style={{ display: "none" }}
+          />
+          <button
+            className="profile-menu-item"
+            onClick={handleUploadButtonClick}
+          >
+            <FaUpload /> Upload Profile Picture
+          </button>
+          {/* Toggle Dark mode */}
+          <button className="btn profile-menu-item" onClick={onToggleDarkMode}>
+            {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
+          </button>
+          {/* Toggle local storage only */}
+          <button className="btn profile-menu-item" onClick={onToggleLocalOnly}>
+            Local storage only {localOnly && "✔️"}
+          </button>
+          {/* Logout */}
+          <button
+            className="btn profile-menu-item"
+            onClick={() =>
+              logOut()
+                .then(() => navigate("/"))
+                .catch((error) => console.error(error))
+            }
+          >
+            Log out
+          </button>
         </div>
-      </div>
-    </>
+      )}
+    </div>
   );
 }
