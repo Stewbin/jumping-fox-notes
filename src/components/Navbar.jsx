@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FaFileMedical,
   FaFolderPlus,
@@ -14,8 +14,23 @@ export default function Navbar({
   onToggleDarkMode,
   onToggleLocalOnly,
 }) {
+  const [searchText, setSearchText] = useState("");
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // Make sure we're explicitly calling search with the current text
+    console.log("Form submitted with search text:", searchText);
+    onSearch(e, searchText);
+  };
+
+  const handleSearchChange = (e) => {
+    const text = e.target.value;
+    setSearchText(text);
+    // Apply search on each keystroke
+    onSearch(e, text);
+  };
+
   return (
-    
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
       <div className="container ">
         <span className="navbar-brand">
@@ -30,7 +45,6 @@ export default function Navbar({
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarContent">
-          {/* Create-buttons */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li key={1} className="nav-item">
               <button className="btn invisi-btn" onClick={onNewNote}>
@@ -44,6 +58,28 @@ export default function Navbar({
                 New Notebook
               </button>
             </li>
+          </ul>
+
+          {/* Search bar */}
+          <form className="d-flex" onSubmit={handleSearchSubmit}>
+            <div className="input-group">
+              <input
+                className="form-control me-2"
+                type="search"
+                placeholder="Search by name or tags"
+                aria-label="Search"
+                value={searchText}
+                onChange={handleSearchChange}
+              />
+              <div className="input-group-append">
+                <button className="btn btn-outline-success" type="submit">
+                  <FaMagnifyingGlass />
+                </button>
+              </div>
+            </div>
+          </form>
+          <ul className="navbar-nav">
+            <li key={4} className="nav-item"></li>
           </ul>
         </div>
       </div>

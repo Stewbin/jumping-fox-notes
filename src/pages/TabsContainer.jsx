@@ -108,6 +108,7 @@ export default function TabsContainer() {
                 <Home
                   onOpenNote={(nid, name) => openNote(i, nid, name)}
                   darkMode={darkMode}
+                  localOnly={localOnly}
                 />
               )}
               {tab.type === "editor" && (
