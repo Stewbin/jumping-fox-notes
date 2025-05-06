@@ -1,42 +1,53 @@
 import React, { useState, useEffect } from "react";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
-import { useNavigate } from "react-router-dom";
-import { getAuth, onAuthStateChanged } from "firebase/auth";
-import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
 import Navbar from "../components/Navbar";
+import { pullNotes, pushNote } from "../lib/firestore";
 
-export default function Home({ onOpenNote, darkMode }) {
-  const [notes, setNotes] = useState([]);
-
+export default function Home({ onOpenNote, darkMode, localOnly }) {
   const [filteredNotes, setFilteredNotes] = useState([]);
   const [originalNotes, setOriginalNotes] = useState([]);
 
+  // Retrieve stored notes
   useEffect(() => {
-    const saved = localStorage.getItem("notes");
-    const parsedNotes = JSON.parse(saved) ?? [];
-    setNotes(parsedNotes);
-    setFilteredNotes(parsedNotes);
-    setOriginalNotes(parsedNotes);
-  }, []);
+    if (localOnly) {
+      const saved = localStorage.getItem("notes");
+      const parsedNotes = JSON.parse(saved) ?? [];
+      console.log(parsedNotes);
+
+      setFilteredNotes(parsedNotes);
+      setOriginalNotes(parsedNotes);
+    } else {
+      pullNotes()
+        .then((saved) => {
+          setFilteredNotes(saved);
+          setOriginalNotes(saved);
+        })
+        .catch((error) => console.error(error));
+    }
+  }, [localOnly]);
+
   const handleNewNote = () => {
     const name = prompt("Enter note name:");
     if (!name) return;
 
     const newNote = {
+      id: Date.now(),
       name,
       content: "",
       tags: [],
-      timestamp: new Date(),
       audios: [],
-      id: Date.now(),
+      lastModified: new Date(),
     };
 
     const updatedNotes = [...originalNotes, newNote];
-    setNotes(updatedNotes);
     setFilteredNotes(updatedNotes);
     setOriginalNotes(updatedNotes);
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    if (localOnly) {
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    } else {
+      pushNote(newNote, "");
+    }
   };
 
   const handleSearch = (event, searchText) => {
@@ -72,7 +83,11 @@ export default function Home({ onOpenNote, darkMode }) {
 
   return (
     <>
-      <Navbar onNewNote={handleNewNote} onSearch={handleSearch} />
+      <Navbar
+        onNewNote={handleNewNote}
+        onSearch={handleSearch}
+        onToggleDarkMode
+      />
       <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">
           <h3 className="m-3">Recent Notes</h3>

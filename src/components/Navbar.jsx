@@ -5,8 +5,15 @@ import {
   FaMagnifyingGlass,
 } from "react-icons/fa6";
 import fox from "../fox.svg";
+import Avatar from "./Avatar";
 
-export default function Navbar({ onNewNote, onSearch }) {
+export default function Navbar({
+  onNewNote,
+  onSearch,
+  darkMode,
+  onToggleDarkMode,
+  onToggleLocalOnly,
+}) {
   const [searchText, setSearchText] = useState("");
 
   const handleSearchSubmit = (e) => {
@@ -24,7 +31,6 @@ export default function Navbar({ onNewNote, onSearch }) {
   };
 
   return (
-    
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
       <div className="container ">
         <span className="navbar-brand">

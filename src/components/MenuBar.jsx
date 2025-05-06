@@ -2,6 +2,7 @@ import React, { useState } from "react";
 import { FaSun,FaMoon } from "react-icons/fa";
 // import "../styles/MenuBar.css";
 import fox from "../fox.svg";
+import { pullNotes } from "../lib/firestore";
 
 export default function MenuBar({
   onFileNew,
@@ -11,8 +12,16 @@ export default function MenuBar({
   onToggleDarkMode,
   openNewNote,
   navigateToHome,
+  localOnly,
 }) {
   const [allNotes, setAllNotes] = useState([]);
+  const getAllNotes = () => {
+    if (localOnly) {
+      setAllNotes(JSON.parse(localStorage.getItem("notes") || "[]"));
+    } else {
+      pullNotes().then((notes) => setAllNotes(notes));
+    }
+  };
   return (
     <nav
       className={
@@ -60,9 +69,7 @@ export default function MenuBar({
           <li className="nav-item dropdown me-3">
             <button
               className="dropdown-toggle nav-link active"
-              onClick={() =>
-                setAllNotes(JSON.parse(localStorage.getItem("notes") ?? "[]"))
-              }
+              onClick={getAllNotes}
               data-bs-toggle="dropdown"
               data-bs-auto-close="outside"
             >
@@ -83,7 +90,7 @@ export default function MenuBar({
                 >
                   {note.name}
                 </li>
-              )) ?? <li className="dropdown-item">No saved notes</li>}
+              )) || <li className="dropdown-item">No saved notes</li>}
             </ul>
           </li>
           {/* Edit Dropdown */}
@@ -103,14 +110,18 @@ export default function MenuBar({
           </li>
         </ul>
 
-        {/* Fox brand */}
-        <button
-          className="navbar-brand bg-transparent border-0"
-          onClick={navigateToHome}
-        >
-          <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
-          Jumping Fox
-        </button>
+        <ul className="navbar-nav">
+          {/* Fox brand */}
+          <li className="nav-item me-3">
+            <button
+              className="navbar-brand bg-transparent border-0"
+              onClick={navigateToHome}
+            >
+              <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
+              Jumping Fox
+            </button>
+          </li>
+        </ul>
       </div>
     </nav>
   );

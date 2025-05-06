@@ -6,7 +6,6 @@ import MainEditor from "./Editor";
 import "react-tabs/style/react-tabs.css";
 import "../styles/TabsContainer.css";
 import Avatar from "../components/Avatar";
-import blankAvatar from "../blank avatar.png";
 
 export default function TabsContainer() {
   const [tabs, setTabs] = useState([
@@ -24,7 +23,8 @@ export default function TabsContainer() {
     setDarkMode((prev) => !prev);
   };
 
-  const addHomeTab = () => openNewTab("", "Home", "home");
+  const [localOnly, setLocalOnly] = useState(true);
+
   const openNewTab = (noteId, title, type) => {
     setTabs([
       ...tabs.map((tab) => {
@@ -39,6 +39,7 @@ export default function TabsContainer() {
     ]);
     setCurrentTabIndex(tabs.length); // Set current tab to right most
   };
+  const addHomeTab = () => openNewTab("", "Home", "home");
   const closeTab = (tabId) => {
     setTabs(tabs.filter((tab) => tab.id !== tabId));
     setCurrentTabIndex(currentTabIndex === 0 ? 0 : currentTabIndex - 1);
@@ -71,8 +72,6 @@ export default function TabsContainer() {
     );
   };
 
-  const profilePic = ""; // TODO: Fetch pfp
-
   return (
     <>
       <Tabs
@@ -93,34 +92,35 @@ export default function TabsContainer() {
           <button className="btn border-0" onClick={addHomeTab}>
             +
           </button>
-
           <Avatar
-            profilePic={profilePic || blankAvatar}
             darkMode={darkMode}
             onToggleDarkMode={toggleDarkMode}
-            className="align-self-end"
+            onToggleLocalOnly={() => setLocalOnly(!localOnly)}
+            localOnly={localOnly}
           />
         </TabList>
 
         {/* Tab Contents */}
-        <div className="position-relative overflow-scroll h-100">
+        <div className="position-relative overflow-auto h-100">
           {tabs.map((tab, i) => (
             <TabPanel key={tab.id}>
               {tab.type === "home" && (
                 <Home
                   onOpenNote={(nid, name) => openNote(i, nid, name)}
-                  
+                  darkMode={darkMode}
+                  localOnly={localOnly}
                 />
               )}
               {tab.type === "editor" && (
                 <MainEditor
                   navigateToHome={() => backToHome(tab.id)}
                   id={tab.noteId}
-                  darkMode={darkMode}
                   onToggleDarkMode={toggleDarkMode}
-                  openNewNote={(noteId, title) =>
+                  onOpenNewNote={(noteId, title) =>
                     openNewTab(noteId, title, "editor")
                   }
+                  darkMode={darkMode}
+                  localOnly={localOnly}
                 />
               )}
             </TabPanel>
