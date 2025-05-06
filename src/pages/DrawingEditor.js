@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useLayoutEffect, useState, createElement, act
 //install perfectfreehand : npm install perfect-freehand
 import rough from 'roughjs/bundled/rough.esm';
 import getStroke from 'perfect-freehand';
-import { saveDrawing, loadDrawing, auth } from "/Users/onariromain/jumping-fox-notes/src/lib/firebase.js";
+import { saveDrawing, loadDrawing, auth } from "../lib/firebase";
 //I will add comments later
 import {
   FaPencil,FaTrashCan,
@@ -16,9 +16,9 @@ import "../styles/Editor.css";
 const generator = rough.generator();
 
 const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
-  // move cursor right after this node and hand control back to the main editor
   
   const exitDrawing = () => {
+    updateAttributes({ elements })
     const pos = getPos()
     editor
       .chain()
@@ -176,6 +176,21 @@ const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
   setElements(restored, true);
 }
 
+  const handleExportImage = () => {
+    const canvas = canvasRef.current;
+    if (!canvas) return;
+  
+    // for PNG:
+    const dataURL = canvas.toDataURL('image/png');
+  
+    // Trigger a download
+    const a = document.createElement('a');
+    a.href = dataURL;
+    a.download = 'drawing.png';   
+    a.click();
+  }
+
+
   const handleMouseDown = (event) =>{
     if (!isDrawingSelected) return 
     const {clientX,clientY } = getRelativeCoords(event);
@@ -185,7 +200,7 @@ const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
       return;
   }
     if (tool == "Selection"){
-      //if on element 
+    
       const element = getElementAtPosition(clientX,clientY,elements);
       if (element){
         const offsetX = clientX - element.x1;
@@ -328,6 +343,7 @@ const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
   >
     Pen
   </button>
+  
 
   <button
     onMouseDown={stop}
@@ -351,6 +367,10 @@ const DrawingEditor = ({ editor, node, getPos, updateAttributes }) => {
     onClick={ClearPage}
   >
     <FaTrashCan/>
+  </button>
+
+  <button onMouseDown={stop} className="toolbar-button" onClick={handleExportImage}>
+  Export Drawing
   </button>
 
   <button onMouseDown={e => e.preventDefault()} onClick={exitDrawing}>

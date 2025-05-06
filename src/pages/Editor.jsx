@@ -64,13 +64,14 @@ const ResizableImage = Image.extend({
     };
   },
 });
-const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
-  id,
+const Editor = ({
+ id,
   navigateToHome,
   darkMode,
   onToggleDarkMode,
-  onOpenNewNote,
-  localOnly,
+ onOpenNewNote,
+  openNewNote,
+  localOnly
 }) => {
   const [tags, setTags] = useState([]);
 
@@ -452,9 +453,7 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
-  const SwitchToDrawingEditor = () => {
-    navigate("/drawingeditor");
-  };
+
 
   if (!editor) {
     return null;
@@ -507,9 +506,6 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
           <button onClick={toggleStrike} className="toolbar-button">
             <FaStrikethrough />
           </button>
-          <button onClick={SwitchToDrawingEditor} className="toolbar-button">
-            <FaPencil />
-          </button>
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={editor.isActive("bulletList") ? "is-active" : ""}
@@ -554,9 +550,8 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
               <FaMicrophone />
             </button>
           )}
-          </>
-)}
-      <button
+
+        <button
           onClick={() => {
             if (!editor) return;
             editor.chain().focus().insertContent({ type: 'drawing' }).run();}}
@@ -564,6 +559,11 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
             title="Insert Drawing">
             <FaPencil />
             </button>
+
+
+          </>
+)}
+      
         </div>
 
         {showImageModal && (
