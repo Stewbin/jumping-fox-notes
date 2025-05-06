@@ -25,6 +25,8 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
         })
         .catch((error) => console.error(error));
     }
+    setFilteredNotes(parsedNotes);
+    setOriginalNotes(parsedNotes);
   }, [localOnly]);
 
   const handleNewNote = () => {
