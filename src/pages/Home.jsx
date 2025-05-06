@@ -1,7 +1,10 @@
-import React, { useState, useEffect, useRef} from "react";
+import React, { useState, useEffect, useRef } from "react";
 import "../styles/Home.css";
 import NoteCard from "../components/NoteCard";
-import Navbar from "../components/Navbar";
+import { useNavigate } from "react-router-dom";
+import { getAuth, onAuthStateChanged } from "firebase/auth";
+import { getStorage, ref, uploadBytes, getDownloadURL } from "firebase/storage";
+import Navbar from "../components/Navbar"
 
 export default function Home({ onOpenNote, darkMode }) {
   const [notes, setNotes] = useState([]);
