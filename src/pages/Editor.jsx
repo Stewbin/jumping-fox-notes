@@ -8,7 +8,6 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
 import { useNavigate } from "react-router-dom";
-import { FaSun } from "react-icons/fa";
 import {
   FaCircleStop,
   FaMicrophone,
@@ -22,7 +21,10 @@ import {
 
 import "../styles/Editor.css";
 import MenuBar from "../components/MenuBar";
+import { DrawingNode } from '../components/DrawingNode.tsx';
 import { deleteNote, pullNote, pushNote } from "../lib/firestore";
+
+
 
 // Handle resizable images
 const ResizableImage = Image.extend({
@@ -62,8 +64,7 @@ const ResizableImage = Image.extend({
     };
   },
 });
-
-const Editor = ({
+const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   id,
   navigateToHome,
   darkMode,
@@ -85,11 +86,13 @@ const Editor = ({
   const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef(null);
   const imageIdCounter = useRef(0);
+  
 
   const editor = useEditor({
     extensions: [
       StarterKit,
       Color,
+      DrawingNode,
       ResizableImage.configure({
         inline: true,
         allowBase64: true,
@@ -137,6 +140,7 @@ const Editor = ({
       }
     },
   });
+  const isDrawingActive = editor.isActive('drawing');
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudios, setRecordedAudios] = useState([]);
   const [seconds, setSeconds] = useState(0);
@@ -464,22 +468,25 @@ const Editor = ({
         onFileSave={handleManualSave}
         onFileDelete={handleDeleteNote}
         darkMode={darkMode}
+        openNewNote={openNewNote}
         onToggleDarkMode={onToggleDarkMode}
-        openNewNote={onOpenNewNote}
+        onOpenNewNote={onOpenNewNote}
         navigateToHome={navigateToHome}
         localOnly={localOnly}
       />
       <div
-        className={`container editor-container py-3 ${
-          darkMode ? "bg-dark text-light" : "bg-white text-dark"
-        }`}
-      >
-        {/* Tool Bar */}
-        <div
-          className={`toolbar mb-2 p-2 rounded ${
-            darkMode ? "bg-secondary" : "bg-light"
-          }`}
-        >
+  className={`container editor-container py-3 ${
+    darkMode ? "dark-mode bg-dark text-light" : "bg-white text-dark"
+  }`}
+>
+  {/* Tool Bar */}
+  <div
+    className={`toolbar mb-2 p-2 rounded ${
+      darkMode ? "bg-secondary" : "bg-light"
+    }`}
+  >
+    {!isDrawingActive && (
+      <>
           <input
             type="color"
             onInput={(event) =>
@@ -500,11 +507,9 @@ const Editor = ({
           <button onClick={toggleStrike} className="toolbar-button">
             <FaStrikethrough />
           </button>
-
           <button onClick={SwitchToDrawingEditor} className="toolbar-button">
             <FaPencil />
           </button>
-
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={editor.isActive("bulletList") ? "is-active" : ""}
@@ -549,6 +554,16 @@ const Editor = ({
               <FaMicrophone />
             </button>
           )}
+          </>
+)}
+      <button
+          onClick={() => {
+            if (!editor) return;
+            editor.chain().focus().insertContent({ type: 'drawing' }).run();}}
+            className="toolbar-button"
+            title="Insert Drawing">
+            <FaPencil />
+            </button>
         </div>
 
         {showImageModal && (
