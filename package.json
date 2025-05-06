@@ -24,7 +24,6 @@
     "draft-js": "^0.11.7",
     "expo-av": "^15.0.2",
     "firebase": "^11.6.1",
-    "html2canvas": "^1.4.1",
     "jspdf": "^3.0.1",
     "perfect-freehand": "^1.2.2",
     "quill": "^2.0.3",

@@ -84,7 +84,7 @@ export default function TabsContainer() {
             <Tab key={tab.id}>
               {tab.title}
               <button
-                className="btn btn-close"
+                className="btn btn-close close-tab"
                 onClick={() => closeTab(tab.id)}
               ></button>
             </Tab>

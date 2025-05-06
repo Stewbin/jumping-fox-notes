@@ -37,7 +37,7 @@ const Signup = () => {
       });
 
       alert("Signup Successful!");
-      navigate("/login");
+      navigate("/home");
     } catch (err) {
       if (err.code !== "auth/email-already-in-use") {
         setError(err.message || "Signup failed. Please try again.");
