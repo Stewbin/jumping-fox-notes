@@ -21,10 +21,8 @@ import {
 
 import "../styles/Editor.css";
 import MenuBar from "../components/MenuBar";
-import { DrawingNode } from '../components/DrawingNode.tsx';
+import { DrawingNode } from "../components/DrawingNode.tsx";
 import { deleteNote, pullNote, pushNote } from "../lib/firestore";
-
-
 
 // Handle resizable images
 const ResizableImage = Image.extend({
@@ -65,13 +63,13 @@ const ResizableImage = Image.extend({
   },
 });
 const Editor = ({
- id,
+  id,
   navigateToHome,
   darkMode,
   onToggleDarkMode,
- onOpenNewNote,
+  onOpenNewNote,
   openNewNote,
-  localOnly
+  localOnly,
 }) => {
   const [tags, setTags] = useState([]);
 
@@ -87,7 +85,6 @@ const Editor = ({
   const [isResizing, setIsResizing] = useState(false);
   const fileInputRef = useRef(null);
   const imageIdCounter = useRef(0);
-  
 
   const editor = useEditor({
     extensions: [
@@ -141,7 +138,7 @@ const Editor = ({
       }
     },
   });
-  const isDrawingActive = editor.isActive('drawing');
+  const isDrawingActive = editor.isActive("drawing");
   const [isRecording, setIsRecording] = useState(false);
   const [recordedAudios, setRecordedAudios] = useState([]);
   const [seconds, setSeconds] = useState(0);
@@ -386,7 +383,7 @@ const Editor = ({
       id: newId,
       name,
       content: "",
-      lastModified: new Date(),
+      timestam: new Date(),
       tags: [],
       audios: [],
     };
@@ -454,7 +451,6 @@ const Editor = ({
     editor?.chain().focus().toggleStrike().run();
   };
 
-
   if (!editor) {
     return null;
   }
@@ -474,96 +470,99 @@ const Editor = ({
         localOnly={localOnly}
       />
       <div
-  className={`container editor-container py-3 ${
-    darkMode ? "dark-mode bg-dark text-light" : "bg-white text-dark"
-  }`}
->
-  {/* Tool Bar */}
-  <div
-    className={`toolbar mb-2 p-2 rounded ${
-      darkMode ? "bg-secondary" : "bg-light"
-    }`}
-  >
-    {!isDrawingActive && (
-      <>
-          <input
-            type="color"
-            onInput={(event) =>
-              editor.chain().focus().setColor(event.target.value).run()
-            }
-            value={editor.getAttributes("textStyle").color}
-            data-testid="setColor"
-          />
-          <button onClick={toggleBold} className="toolbar-button">
-            <FaBold />
-          </button>
-          <button onClick={toggleItalic} className="toolbar-button">
-            <FaItalic />
-          </button>
-          <button onClick={toggleUnderline} className="toolbar-button">
-            <FaUnderline />
-          </button>
-          <button onClick={toggleStrike} className="toolbar-button">
-            <FaStrikethrough />
-          </button>
-          <button
-            onClick={() => editor.chain().focus().toggleBulletList().run()}
-            className={editor.isActive("bulletList") ? "is-active" : ""}
-          >
-            <MdFormatListBulleted />
-          </button>
-          <select
-            type="font"
-            onChange={(event) =>
-              editor.chain().focus().setFontFamily(event.target.value).run()
-            }
-          >
-            {fonts.map((font) => (
-              <option key={font} value={font}>
-                {font}
-              </option>
-            ))}
-          </select>
+        className={`container editor-container py-3 ${
+          darkMode ? "dark-mode bg-dark text-light" : "bg-white text-dark"
+        }`}
+      >
+        {/* Tool Bar */}
+        <div
+          className={`toolbar mb-2 p-2 rounded ${
+            darkMode ? "bg-secondary" : "bg-light"
+          }`}
+        >
+          {!isDrawingActive && (
+            <>
+              <input
+                type="color"
+                onInput={(event) =>
+                  editor.chain().focus().setColor(event.target.value).run()
+                }
+                value={editor.getAttributes("textStyle").color}
+                data-testid="setColor"
+              />
+              <button onClick={toggleBold} className="toolbar-button">
+                <FaBold />
+              </button>
+              <button onClick={toggleItalic} className="toolbar-button">
+                <FaItalic />
+              </button>
+              <button onClick={toggleUnderline} className="toolbar-button">
+                <FaUnderline />
+              </button>
+              <button onClick={toggleStrike} className="toolbar-button">
+                <FaStrikethrough />
+              </button>
+              <button
+                onClick={() => editor.chain().focus().toggleBulletList().run()}
+                className={editor.isActive("bulletList") ? "is-active" : ""}
+              >
+                <MdFormatListBulleted />
+              </button>
+              <select
+                type="font"
+                onChange={(event) =>
+                  editor.chain().focus().setFontFamily(event.target.value).run()
+                }
+              >
+                {fonts.map((font) => (
+                  <option key={font} value={font}>
+                    {font}
+                  </option>
+                ))}
+              </select>
 
-          <input
-            type="file"
-            ref={fileInputRef}
-            onChange={handleFileChange}
-            accept="image/*"
-            style={{ display: "none" }}
-          />
+              <input
+                type="file"
+                ref={fileInputRef}
+                onChange={handleFileChange}
+                accept="image/*"
+                style={{ display: "none" }}
+              />
 
-          <button
-            onClick={handleImageButtonClick}
-            className="toolbar-button"
-            title="Upload Image"
-          >
-            <FaImage />
-          </button>
+              <button
+                onClick={handleImageButtonClick}
+                className="toolbar-button"
+                title="Upload Image"
+              >
+                <FaImage />
+              </button>
 
-          {isRecording ? (
-            <button onClick={stopRecording}>
-              <FaCircleStop />
-            </button>
-          ) : (
-            <button onClick={startRecording}>
-              <FaMicrophone />
-            </button>
+              {isRecording ? (
+                <button onClick={stopRecording}>
+                  <FaCircleStop />
+                </button>
+              ) : (
+                <button onClick={startRecording}>
+                  <FaMicrophone />
+                </button>
+              )}
+
+              <button
+                onClick={() => {
+                  if (!editor) return;
+                  editor
+                    .chain()
+                    .focus()
+                    .insertContent({ type: "drawing" })
+                    .run();
+                }}
+                className="toolbar-button"
+                title="Insert Drawing"
+              >
+                <FaPencil />
+              </button>
+            </>
           )}
-
-        <button
-          onClick={() => {
-            if (!editor) return;
-            editor.chain().focus().insertContent({ type: 'drawing' }).run();}}
-            className="toolbar-button"
-            title="Insert Drawing">
-            <FaPencil />
-            </button>
-
-
-          </>
-)}
-      
         </div>
 
         {showImageModal && (

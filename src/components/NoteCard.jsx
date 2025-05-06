@@ -9,7 +9,13 @@ import error404 from "../error-404.png";
  * @param {Date} lastModified - Date object of last modification
  * @returns {JSX.Element}
  */
-export default function NoteCard({ title, tags, timestamp, onOpenNote }) {
+export default function NoteCard({
+  title,
+  tags,
+  timestamp,
+  lastModified,
+  onOpenNote,
+}) {
   // TODO: Change `tags` for `tagIDs`
   return (
     <button className="btn p-0 m-0 border-0" type="button" onClick={onOpenNote}>
@@ -22,7 +28,9 @@ export default function NoteCard({ title, tags, timestamp, onOpenNote }) {
         <div className="card-body">
           <h5 className="card-title">{title}</h5>
           <p className="card-text">
-            Created modified: {timestamp.toLocaleString()}
+            Created: {timestamp.toDateString()}
+            <br />
+            Modified: {lastModified.toDateString()}
           </p>
         </div>
         <ul className="list-group list-group-flush">

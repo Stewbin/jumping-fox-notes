@@ -38,6 +38,7 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
       tags: [],
       audios: [],
       lastModified: new Date(),
+      timestamp: new Date(),
     };
 
     const updatedNotes = [...originalNotes, newNote];
@@ -100,6 +101,7 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
                 title={note.name}
                 tags={note.tags}
                 timestamp={new Date(note.timestamp)}
+                lastModified={new Date(note.lastModified)}
                 onOpenNote={() => onOpenNote(note.id, note.name)}
               />
             </div>
