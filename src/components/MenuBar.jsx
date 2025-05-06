@@ -1,18 +1,27 @@
 import React, { useState } from "react";
+import { FaSun,FaMoon } from "react-icons/fa";
 // import "../styles/MenuBar.css";
 import fox from "../fox.svg";
-import Avatar from "./Avatar";
+import { pullNotes } from "../lib/firestore";
 
 export default function MenuBar({
   onFileNew,
   onFileSave,
   onFileDelete,
   darkMode,
+  onToggleDarkMode,
   openNewNote,
   navigateToHome,
-  toggleDarkMode,
+  localOnly,
 }) {
   const [allNotes, setAllNotes] = useState([]);
+  const getAllNotes = () => {
+    if (localOnly) {
+      setAllNotes(JSON.parse(localStorage.getItem("notes") || "[]"));
+    } else {
+      pullNotes().then((notes) => setAllNotes(notes));
+    }
+  };
   return (
     <nav
       className={
@@ -60,9 +69,7 @@ export default function MenuBar({
           <li className="nav-item dropdown me-3">
             <button
               className="dropdown-toggle nav-link active"
-              onClick={() =>
-                setAllNotes(JSON.parse(localStorage.getItem("notes") ?? "[]"))
-              }
+              onClick={getAllNotes}
               data-bs-toggle="dropdown"
               data-bs-auto-close="outside"
             >
@@ -83,18 +90,29 @@ export default function MenuBar({
                 >
                   {note.name}
                 </li>
-              )) ?? <li className="dropdown-item">No saved notes</li>}
+              )) || <li className="dropdown-item">No saved notes</li>}
             </ul>
           </li>
           {/* Edit Dropdown */}
           <li className="nav-item dropdown">
             <button className="nav-link active">Edit</button>
           </li>
+           {/* Dark mode button */}
+           <li className="nav-item ms-3 mt-1">
+           <button
+           className={`btn btn-sm ${
+           darkMode ? "btn-outline-light" : "btn-outline-dark"
+           }`}
+           onClick={onToggleDarkMode}
+           >
+           {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
+          </li>
         </ul>
 
         <ul className="navbar-nav">
           {/* Fox brand */}
-          <li className="nav-item">
+          <li className="nav-item me-3">
             <button
               className="navbar-brand bg-transparent border-0"
               onClick={navigateToHome}
@@ -102,9 +120,6 @@ export default function MenuBar({
               <img src={fox} alt="Jumping Fox Notes" className="logo me-2" />
               Jumping Fox
             </button>
-          </li>
-          <li className="nav-item">
-            <Avatar darkMode={darkMode} onToggleDarkMode={toggleDarkMode} />
           </li>
         </ul>
       </div>

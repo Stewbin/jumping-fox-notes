@@ -8,7 +8,12 @@ import { FaUpload } from "react-icons/fa6";
 import blankAvatar from "../blank avatar.png";
 import { storage, auth } from "../lib/firebase";
 
-export default function Avatar({ onToggleDarkMode, darkMode }) {
+export default function Avatar({
+  onToggleDarkMode,
+  darkMode,
+  onToggleLocalOnly,
+  localOnly,
+}) {
   const navigate = useNavigate();
   const [profilePic, setProfilePic] = useState(blankAvatar);
   const [showProfileMenu, setShowProfileMenu] = useState(false);
@@ -24,7 +29,7 @@ export default function Avatar({ onToggleDarkMode, darkMode }) {
     } catch (error) {
       console.log("No profile picture found or error fetching it:", error);
       // Use default avatar when no picture is found
-      setProfilePic(null);
+      setProfilePic(blankAvatar);
     }
   };
 
@@ -85,7 +90,7 @@ export default function Avatar({ onToggleDarkMode, darkMode }) {
   }, []);
 
   return (
-    <div className="position-relative me-3 my-3">
+    <div id="avatar">
       {/* Change Profile Pic */}
       <button
         className="bt profile-btn"
@@ -115,6 +120,10 @@ export default function Avatar({ onToggleDarkMode, darkMode }) {
           {/* Toggle Dark mode */}
           <button className="btn profile-menu-item" onClick={onToggleDarkMode}>
             {darkMode ? "🌙 Dark Mode" : "☀️ Light Mode"}
+          </button>
+          {/* Toggle local storage only */}
+          <button className="btn profile-menu-item" onClick={onToggleLocalOnly}>
+            Local storage only {localOnly && "✔️"}
           </button>
           {/* Logout */}
           <button

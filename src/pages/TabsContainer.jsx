@@ -23,6 +23,8 @@ export default function TabsContainer() {
     setDarkMode((prev) => !prev);
   };
 
+  const [localOnly, setLocalOnly] = useState(true);
+
   const openNewTab = (noteId, title, type) => {
     setTabs([
       ...tabs.map((tab) => {
@@ -70,8 +72,6 @@ export default function TabsContainer() {
     );
   };
 
-  const profilePic = ""; // TODO: Fetch pfp
-
   return (
     <>
       <Tabs
@@ -92,28 +92,35 @@ export default function TabsContainer() {
           <button className="btn border-0" onClick={addHomeTab}>
             +
           </button>
+          <Avatar
+            darkMode={darkMode}
+            onToggleDarkMode={toggleDarkMode}
+            onToggleLocalOnly={() => setLocalOnly(!localOnly)}
+            localOnly={localOnly}
+          />
         </TabList>
 
         {/* Tab Contents */}
-        <div className="position-relative overflow-scroll h-100">
+        <div className="position-relative overflow-auto h-100">
           {tabs.map((tab, i) => (
             <TabPanel key={tab.id}>
               {tab.type === "home" && (
                 <Home
                   onOpenNote={(nid, name) => openNote(i, nid, name)}
                   darkMode={darkMode}
-                  toggleDarkMode={toggleDarkMode}
+                  localOnly={localOnly}
                 />
               )}
               {tab.type === "editor" && (
                 <MainEditor
                   navigateToHome={() => backToHome(tab.id)}
                   id={tab.noteId}
-                  darkMode={darkMode}
-                  openNewNote={(noteId, title) =>
+                  onToggleDarkMode={toggleDarkMode}
+                  onOpenNewNote={(noteId, title) =>
                     openNewTab(noteId, title, "editor")
                   }
-                  toggleDarkMode={toggleDarkMode}
+                  darkMode={darkMode}
+                  localOnly={localOnly}
                 />
               )}
             </TabPanel>

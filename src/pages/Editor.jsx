@@ -3,15 +3,12 @@ import { useEditor, EditorContent } from "@tiptap/react";
 import { StarterKit } from "@tiptap/starter-kit";
 import { Color } from "@tiptap/extension-color";
 import Underline from "@tiptap/extension-underline";
-import { Bold } from "@tiptap/extension-bold";
-import { Italic } from "@tiptap/extension-italic";
-import { Strike } from "@tiptap/extension-strike";
 import TextStyle from "@tiptap/extension-text-style";
-import BulletList from "@tiptap/extension-bullet-list";
 import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
 import { useNavigate } from "react-router-dom";
+import { FaSun } from "react-icons/fa";
 import {
   FaCircleStop,
   FaMicrophone,
@@ -20,14 +17,12 @@ import {
   FaBold,
   FaItalic,
   FaStrikethrough,
+  FaPencil,
 } from "react-icons/fa6";
-
-// for dark mode
-// import "@sinm/react-chrome-tabs/css/chrome-tabs-dark-theme.css";
 
 import "../styles/Editor.css";
 import MenuBar from "../components/MenuBar";
-// import { pullNote, pushNote } from "../lib/firestore";
+import { deleteNote, pullNote, pushNote } from "../lib/firestore";
 
 // Handle resizable images
 const ResizableImage = Image.extend({
@@ -68,7 +63,14 @@ const ResizableImage = Image.extend({
   },
 });
 
-const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
+const Editor = ({
+  id,
+  navigateToHome,
+  darkMode,
+  onToggleDarkMode,
+  onOpenNewNote,
+  localOnly,
+}) => {
   const [tags, setTags] = useState([]);
 
   const [note, setNote] = useState(null);
@@ -92,11 +94,6 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
         inline: true,
         allowBase64: true,
       }),
-      // already in StarterKit
-      // Bold,
-      // BulletList,
-      // Italic,
-      // Strike,
       Underline,
       TextStyle,
       FontFamily.configure({
@@ -301,16 +298,20 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
       mediaStream.current.getTracks().forEach((track) => track.stop());
     }
   };
+
   const handleDeleteNote = () => {
     const confirmDelete = window.confirm(
       "Are you sure you want to delete this note?"
     );
     if (!confirmDelete) return;
 
-    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
-    const updatedNotes = savedNotes.filter((n) => String(n.id) !== String(id));
-
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    if (localOnly) {
+      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+      const updatedNotes = savedNotes.filter((n) => n.id !== id);
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    } else {
+      deleteNote(id);
+    }
     navigateToHome();
   };
 
@@ -347,17 +348,21 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
 
   // Open a Note
   useEffect(() => {
-    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
-    console.log(`id: ${id}`);
-    const currentNote = savedNotes.find((n) => String(n.id) === String(id));
-    console.log(currentNote);
+    let currentNote;
+    if (localOnly) {
+      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+      currentNote = savedNotes.find((n) => String(n.id) === String(id));
+      console.log(`id: ${id}`);
+      console.log(savedNotes);
+    } else {
+      currentNote = pullNote(id);
+    }
 
-    // const currentNote = pullNote(id);
     setRecordedAudios(currentNote.audios || []);
 
     if (!currentNote) {
       alert("Note not found");
-      navigate("/home");
+      navigateToHome();
       return;
     }
 
@@ -365,13 +370,9 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
     if (editor) {
       editor.commands.setContent(currentNote.content || "");
     }
-  }, [id, editor, navigate]);
+  }, [id, editor, navigateToHome, localOnly]);
 
-  // Save note
-  useEffect(() => {
-    if (!editor || !note) return;
-  }, [editor, note, id, recordedAudios]);
-
+  // Creating note
   const handleNewNote = () => {
     const name = prompt("Enter note name:");
     if (!name) return;
@@ -380,36 +381,54 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
       id: newId,
       name,
       content: "",
-      lastModified: new Date().toISOString(),
+      lastModified: new Date(),
       tags: [],
       audios: [],
     };
 
-    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
-    savedNotes.push(newNote);
-    localStorage.setItem("notes", JSON.stringify(savedNotes));
+    if (localOnly) {
+      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+      savedNotes.push(newNote);
+      localStorage.setItem("notes", JSON.stringify(savedNotes));
+    } else {
+      pushNote(newNote, newId);
+    }
 
-    openNewNote(newId, name); // new tab
+    onOpenNewNote(newId, name); // New tab
   };
 
-  const handleManualSave = () => {
+  const saveNote = useCallback(() => {
     if (!editor || !note) return;
 
     const updatedContent = editor.getHTML();
-    const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+    const updatedNote = {
+      ...note,
+      content: updatedContent,
+      lastModified: new Date().toISOString(),
+      audios: recordedAudios,
+    };
+    if (localOnly) {
+      const savedNotes = JSON.parse(localStorage.getItem("notes") || "[]");
+      const updatedNotes = savedNotes.map((n) =>
+        n.id === id ? updatedNote : n
+      );
+      localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    } else {
+      pushNote(updatedNote, id);
+    }
+  }, [editor, note, id, recordedAudios, localOnly]);
 
-    const updatedNotes = savedNotes.map((n) =>
-      String(n.id) === String(note.id)
-        ? {
-            ...n,
-            content: updatedContent,
-            lastModified: new Date().toISOString(),
-            audios: recordedAudios,
-          }
-        : n
-    );
+  // Auto save
+  useEffect(() => {
+    const saveInterval = 20; // in seconds
+    const intervalID = setInterval(saveNote, saveInterval * 1000);
 
-    localStorage.setItem("notes", JSON.stringify(updatedNotes));
+    return () => clearInterval(intervalID);
+  }, [editor, note, id, recordedAudios, localOnly, saveNote]);
+
+  // Manual save
+  const handleManualSave = () => {
+    saveNote();
     alert("Note saved!");
   };
 
@@ -429,6 +448,9 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
+  const SwitchToDrawingEditor = () => {
+    navigate("/drawingeditor");
+  };
 
   if (!editor) {
     return null;
@@ -442,14 +464,22 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
         onFileSave={handleManualSave}
         onFileDelete={handleDeleteNote}
         darkMode={darkMode}
-        openNewNote={openNewNote}
+        onToggleDarkMode={onToggleDarkMode}
+        openNewNote={onOpenNewNote}
         navigateToHome={navigateToHome}
+        localOnly={localOnly}
       />
       <div
-        className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}
+        className={`container editor-container py-3 ${
+          darkMode ? "bg-dark text-light" : "bg-white text-dark"
+        }`}
       >
         {/* Tool Bar */}
-        <div className="toolbar">
+        <div
+          className={`toolbar mb-2 p-2 rounded ${
+            darkMode ? "bg-secondary" : "bg-light"
+          }`}
+        >
           <input
             type="color"
             onInput={(event) =>
@@ -470,6 +500,11 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
           <button onClick={toggleStrike} className="toolbar-button">
             <FaStrikethrough />
           </button>
+
+          <button onClick={SwitchToDrawingEditor} className="toolbar-button">
+            <FaPencil />
+          </button>
+
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={editor.isActive("bulletList") ? "is-active" : ""}

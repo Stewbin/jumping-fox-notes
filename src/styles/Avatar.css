@@ -1,5 +1,10 @@
-#profile-pic {
+#avatar {
   height: 4rem;
+  position: absolute;
+  z-index: 10001 !important;
+  right: 5%;
+  display: inline-block;
+  margin-top: 5px;
 }
 
 /* Profile Picture Styles */
@@ -32,7 +37,7 @@
 
 .profile-menu {
   position: absolute;
-  top: 100%;
+  top: 50%;
   right: 0;
   min-width: 200px;
   background-color: white;
