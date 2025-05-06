@@ -69,7 +69,7 @@ export async function loadDrawing(drawingId) {
     console.log("Stored Drawings:", docSnap.data());
     return docSnap.data();
   } else {
-    // docSnap.data() will be undefined in this case
+  
     console.log("No such Drawing!");
   }
 }

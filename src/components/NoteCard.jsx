@@ -1,7 +1,6 @@
 import React, { useState, useRef, useEffect, createElement } from "react";
 import "../styles/NoteCard.css";
 import placeholder from "../placeholder image.jpg";
-import { toPng } from "html-to-image";
 
 /**
  * @param {string} title - Title of the note
