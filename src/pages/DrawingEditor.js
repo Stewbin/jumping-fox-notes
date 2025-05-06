@@ -3,7 +3,7 @@ import React, { useRef, useEffect, useLayoutEffect, useState, createElement, act
 //install perfectfreehand : npm install perfect-freehand
 import rough from 'roughjs/bundled/rough.esm';
 import getStroke from 'perfect-freehand';
-import { saveDrawing, loadDrawing, auth } from "/Users/onariromain/jumping-fox-notes/src/lib/firebase.js";
+import { saveDrawing, loadDrawing, auth } from "../lib/firebase";
 //I will add comments later
 import {
   FaPencil,FaTrashCan,

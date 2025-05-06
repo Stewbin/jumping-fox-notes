@@ -10,7 +10,7 @@ import React, {
 //install perfectfreehand : npm install perfect-freehand
 import rough from "roughjs/bundled/rough.esm";
 import getStroke from "perfect-freehand";
-import { saveDrawing, loadDrawing, auth } from "../lib/firebase";
+import { saveDrawing, loadDrawing, auth } from '../lib/firebase';
 //I will add comments later
 import { FaPencil } from "react-icons/fa6";
 import { useNavigate } from "react-router-dom";
