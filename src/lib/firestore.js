@@ -1,54 +1,78 @@
 import { db, auth } from "./firebase";
 import { onAuthStateChanged } from "firebase/auth";
-import { doc, setDoc, getDoc, getDocs, collection } from "firebase/firestore";
+import {
+  doc,
+  setDoc,
+  getDoc,
+  getDocs,
+  collection,
+  deleteDoc,
+} from "firebase/firestore";
 
-const notesRootPromise = new Promise((resolve, reject) => {
-  const unsubscribe = onAuthStateChanged(auth, (user) => {
-    if (!user) {
-      // reject(new Error("No user logged in."));
-      console.warn("No user logged in.");
-      return;
-    }
-    const ref = collection(db, "users", user.uid, "notesRoot");
-    resolve(ref);
-    unsubscribe(); // stop listening after first resolution
-  });
+let notesRoot = null;
+let waitingResolvers = [];
+
+onAuthStateChanged(auth, (user) => {
+  if (user) {
+    notesRoot = collection(db, "users", user.uid, "notesRoot");
+    // Pass root to each callback
+    waitingResolvers.forEach(({ resolve }) => resolve(notesRoot));
+    waitingResolvers = []; // clear after resolving
+  } else {
+    notesRoot = null;
+    // Reject any pending promises when user is logged out
+    waitingResolvers.forEach(({ reject }) =>
+      reject(new Error("No user is logged in"))
+    );
+    waitingResolvers = [];
+  }
 });
+
+/**
+ * Call this anywhere to await a ready notesRoot.
+ * It resolves immediately if already available, or waits for login.
+ */
+export function getNotesRoot() {
+  if (notesRoot) return Promise.resolve(notesRoot);
+
+  // Queue call back for notesRoot
+  return new Promise((resolve, reject) => {
+    waitingResolvers.push({ resolve, reject });
+  });
+}
 
 /**
  * Writes to the document at `notesRoot/id`. If no document exists, one will be created.
  *
  * If `id` is an empty string, then an ID will be auto-generated.
  * @param {string} id ID of Note
- * @param {Object} newNote `{ name: string, content: string, tags: string[], timestamp: Date }`
+ * @param {Object} newNote `{ id: string, name: string, content: string, ... }`
  * @returns {string} The (possibly auto-generated) id of the pushed document
  */
 export async function pushNote(newNote, id) {
   try {
-    const notesRoot = await notesRootPromise;
+    const notesRoot = await getNotesRoot();
     const noteRef = id ? doc(notesRoot, id) : doc(notesRoot);
     setDoc(noteRef, newNote, {
       merge: true,
     });
-    return noteRef.id;
   } catch (error) {
-    console.warn(error);
-    return "";
+    console.error(error);
   }
 }
 
 /**
- * Returns the note `id` if it exists in the User's collection.
+ * Returns the note given by `id` if it exists in the User's collection.
  * Else, it returns `null`.
- * @param {string} id ID of Note (Equivalent to name)
+ * @param {string} id ID of Note
  * @returns Promise<DocumentSnapshot | null>
  */
 export async function pullNote(id) {
   try {
-    const notesRoot = await notesRootPromise;
+    const notesRoot = await getNotesRoot();
     return getDoc(doc(notesRoot, id));
   } catch (error) {
-    console.warn(error);
+    console.error(error);
     return null;
   }
 }
@@ -57,99 +81,28 @@ export async function pullNote(id) {
  * Retrieves an array of all Notes the User has. The array may be empty.
  * @returns Promise<QueryDocumentSnapshot[]>
  */
-async function pullNotes() {
+export async function pullNotes() {
   try {
-    const notesRoot = await notesRootPromise;
+    const notesRoot = await getNotesRoot();
     return getDocs(notesRoot).then((snapshot) => {
       const data = snapshot.docs.map((doc) => ({ id: doc.id, ...doc.data() }));
-      console.log(data);
       return data;
     });
   } catch (error) {
-    console.warn(error);
+    console.error(error);
     return [];
   }
 }
 
-// async function pullNotebooks(path) {
-//   try {
-//     const notesRoot = await notesRootPromise;
-//     const notebookDetails = query(
-//       collection(notesRoot, path),
-//       where("type", "==", "Notebook"),
-//       limit(1)
-//     );
-//     return getDocs(notebookDetails).then((snapshot) =>
-//       snapshot.docs.map((doc) => doc.data)
-//     );
-//   } catch (error) {
-//     console.warn(error);
-//     return [];
-//   }
-// }
-
 /**
- * Modify the corresponding Notebook-Details document of a notebook.
- * If no document exists, one will be created.
- * @param {string} cwd (must end in a collection)
- * @param {string} name Name of Notebook
- * @param {*} newDetails `{type: 'notebook', name: string, tags: Id[]}`
+ * Deletes doc specified by `id`. Doc need not exist.
+ * @param {string} id ID of document
  */
-async function pushNotebook(cwd, name, newNotebook) {
+export async function deleteNote(id) {
   try {
-    const notesRoot = await notesRootPromise;
-    setDoc(doc(notesRoot, cwd, name), newNotebook, { merge: true });
+    const notesRoot = await getNotesRoot();
+    deleteDoc(doc(notesRoot, id));
   } catch (error) {
-    console.warn(error);
+    console.error(error);
   }
 }
-
-// export async function setNotebookDetails(cwd, name, newDetails) {
-//   const notebookDetails = query(
-//     collection(notesRoot, cwd, name),
-//     // where("name", "==", name),
-//     where("type", "==", "Notebook"),
-//     limit(1)
-//   );
-//   const detailsRef = await getDocs(notebookDetails)
-//     .then((snapshot) => snapshot.docs)
-//     .then((docs) => (docs.empty ? doc(notesRoot, cwd) : docs[0].ref))
-//     .catch((error) => console.error(error));
-
-//   setDoc(detailsRef, newDetails);
-// }
-
-/**
- * Returns array of all documents in the Notebook `/cwd/name`
- * @param {string} cwd Current working directory
- * @param {string} name _Name_ of Notebook
- * @returns
- */
-// export async function getNotebookContents(cwd, name) {
-//   if (!user) {
-//     alert("No user logged in.");
-//     return null;
-//   }
-//   // Get notebook id from dupe file
-//   const notebookDetails = query(
-//     collection(notesRoot, cwd),
-//     where("name", "==", name),
-//     where("type", "==", "Notebook"),
-//     limit(1)
-//   );
-//   try {
-//     const notebookIds = (await getDocs(notebookDetails)).docs.map(
-//       (doc) => doc.id
-//     );
-//     if (!notebookIds) {
-//       return [];
-//     }
-//     // Query collection `notebookId`
-//     return getDocs(collection(notesRoot, cwd, notebookIds[0])).then(
-//       (querySnapShot) => querySnapShot.docs.map((doc) => doc.data)
-//     );
-//   } catch (error) {
-//     console.error(error);
-//     return [];
-//   }
-// }
