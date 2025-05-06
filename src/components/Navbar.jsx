@@ -1,4 +1,4 @@
-import React from "react";
+import React, { useState } from "react";
 import {
   FaFileMedical,
   FaFolderPlus,
@@ -7,6 +7,22 @@ import {
 import fox from "../fox.svg";
 
 export default function Navbar({ onNewNote, onSearch }) {
+  const [searchText, setSearchText] = useState("");
+
+  const handleSearchSubmit = (e) => {
+    e.preventDefault();
+    // Make sure we're explicitly calling search with the current text
+    console.log("Form submitted with search text:", searchText);
+    onSearch(e, searchText);
+  };
+
+  const handleSearchChange = (e) => {
+    const text = e.target.value;
+    setSearchText(text);
+    // Apply search on each keystroke
+    onSearch(e, text);
+  };
+
   return (
     
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
@@ -23,7 +39,6 @@ export default function Navbar({ onNewNote, onSearch }) {
           <span className="navbar-toggler-icon"></span>
         </button>
         <div className="collapse navbar-collapse" id="navbarContent">
-          {/* Create-buttons */}
           <ul className="navbar-nav me-auto mb-2 mb-lg-0">
             <li key={1} className="nav-item">
               <button className="btn invisi-btn" onClick={onNewNote}>
@@ -38,14 +53,17 @@ export default function Navbar({ onNewNote, onSearch }) {
               </button>
             </li>
           </ul>
+
           {/* Search bar */}
-          <form className="d-flex" onSubmit={onSearch}>
+          <form className="d-flex" onSubmit={handleSearchSubmit}>
             <div className="input-group">
               <input
                 className="form-control me-2"
                 type="search"
-                placeholder="Search"
+                placeholder="Search by name or tags"
                 aria-label="Search"
+                value={searchText}
+                onChange={handleSearchChange}
               />
               <div className="input-group-append">
                 <button className="btn btn-outline-success" type="submit">
