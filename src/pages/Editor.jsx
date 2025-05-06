@@ -64,13 +64,14 @@ const ResizableImage = Image.extend({
     };
   },
 });
-const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
-  id,
+const Editor = ({
+ id,
   navigateToHome,
   darkMode,
   onToggleDarkMode,
-  onOpenNewNote,
-  localOnly,
+ onOpenNewNote,
+  openNewNote,
+  localOnly
 }) => {
   const [tags, setTags] = useState([]);
 
