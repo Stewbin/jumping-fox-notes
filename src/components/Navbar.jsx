@@ -8,6 +8,7 @@ import fox from "../fox.svg";
 
 export default function Navbar({ onNewNote, onSearch }) {
   return (
+    
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
       <div className="container ">
         <span className="navbar-brand">

@@ -1,4 +1,5 @@
 import React, { useState } from "react";
+import { FaSun,FaMoon } from "react-icons/fa";
 // import "../styles/MenuBar.css";
 import fox from "../fox.svg";
 
@@ -7,6 +8,7 @@ export default function MenuBar({
   onFileSave,
   onFileDelete,
   darkMode,
+  onToggleDarkMode,
   openNewNote,
   navigateToHome,
 }) {
@@ -87,6 +89,17 @@ export default function MenuBar({
           {/* Edit Dropdown */}
           <li className="nav-item dropdown">
             <button className="nav-link active">Edit</button>
+          </li>
+           {/* Dark mode button */}
+           <li className="nav-item ms-3 mt-1">
+           <button
+           className={`btn btn-sm ${
+           darkMode ? "btn-outline-light" : "btn-outline-dark"
+           }`}
+           onClick={onToggleDarkMode}
+           >
+           {darkMode ? <FaSun /> : <FaMoon />}
+            </button>
           </li>
         </ul>
 
