@@ -12,6 +12,7 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
 import { useNavigate } from "react-router-dom";
+import { FaSun } from "react-icons/fa";
 import {
   FaCircleStop,
   FaMicrophone,
@@ -68,7 +69,7 @@ const ResizableImage = Image.extend({
   },
 });
 
-const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
+const Editor = ({ id, navigateToHome, darkMode, onToggleDarkMode, openNewNote }) => {
   const [tags, setTags] = useState([]);
 
   const [note, setNote] = useState(null);
@@ -442,14 +443,16 @@ const Editor = ({ id, navigateToHome, darkMode, openNewNote }) => {
         onFileSave={handleManualSave}
         onFileDelete={handleDeleteNote}
         darkMode={darkMode}
+        onToggleDarkMode={onToggleDarkMode}
         openNewNote={openNewNote}
         navigateToHome={navigateToHome}
       />
       <div
-        className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}
-      >
+  className={`container editor-container py-3 ${
+    darkMode? "bg-dark text-light": "bg-white text-dark"
+  }`} >
         {/* Tool Bar */}
-        <div className="toolbar">
+        <div   className={`toolbar mb-2 p-2 rounded ${ darkMode ? "bg-secondary" : "bg-light"}`}>
           <input
             type="color"
             onInput={(event) =>
