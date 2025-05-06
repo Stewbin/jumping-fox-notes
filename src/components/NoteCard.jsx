@@ -1,6 +1,6 @@
 import React from "react";
 import "../styles/NoteCard.css";
-import error404 from "../error-404.png";
+import placeholder from "../placeholder image.jpg";
 
 /**
  * @param {string} title - Title of the note
@@ -19,9 +19,9 @@ export default function NoteCard({
   // TODO: Change `tags` for `tagIDs`
   return (
     <button className="btn p-0 m-0 border-0" type="button" onClick={onOpenNote}>
-      <div className="card w-100">
+      <div className="card w-100" style={{ minWidth: "300px" }}>
         <img
-          src={error404}
+          src={placeholder}
           alt="Preview of note"
           className="card-img-top border"
         />

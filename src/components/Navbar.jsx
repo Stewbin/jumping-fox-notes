@@ -7,13 +7,7 @@ import {
 import fox from "../fox.svg";
 import Avatar from "./Avatar";
 
-export default function Navbar({
-  onNewNote,
-  onSearch,
-  darkMode,
-  onToggleDarkMode,
-  onToggleLocalOnly,
-}) {
+export default function Navbar({ onNewNote, onSearch, darkMode }) {
   const [searchText, setSearchText] = useState("");
 
   const handleSearchSubmit = (e) => {
@@ -31,7 +25,13 @@ export default function Navbar({
   };
 
   return (
-    <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
+    <nav
+      className={
+        "navbar navbar-expand-md sticky-top " +
+        (darkMode ? "bg-dark" : "bg-light")
+      }
+      data-bs-theme={darkMode ? "dark" : "light"}
+    >
       <div className="container ">
         <span className="navbar-brand">
           <img src={fox} alt="Jumping Fox Notes" className="logo" />

@@ -13,7 +13,6 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
     if (localOnly) {
       const saved = localStorage.getItem("notes");
       const parsedNotes = JSON.parse(saved) ?? [];
-      console.log(parsedNotes);
 
       setFilteredNotes(parsedNotes);
       setOriginalNotes(parsedNotes);
@@ -88,6 +87,7 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
         onNewNote={handleNewNote}
         onSearch={handleSearch}
         onToggleDarkMode
+        darkMode={darkMode}
       />
       <div className={`container ${darkMode ? "dark-mode" : ""}`}>
         <div className="row">
@@ -95,9 +95,8 @@ export default function Home({ onOpenNote, darkMode, localOnly }) {
         </div>
         <div className="row">
           {filteredNotes?.map((note) => (
-            <div key={note.id} className="col-lg-2 col-md-3 col-sm-6">
+            <div key={note.id} className="col-lg-3 col-md-4 col-sm-6">
               <NoteCard
-                id={note.id}
                 title={note.name}
                 tags={note.tags}
                 timestamp={new Date(note.timestamp)}
