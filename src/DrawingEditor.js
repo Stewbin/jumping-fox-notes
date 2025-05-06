@@ -3,9 +3,328 @@ import React, { useRef, useEffect, useLayoutEffect, useState, createElement, act
 //install perfectfreehand : npm install perfect-freehand
 import rough from 'roughjs/bundled/rough.esm';
 import getStroke from 'perfect-freehand';
+import { saveDrawing, loadDrawing, auth } from "/Users/onariromain/jumping-fox-notes/src/lib/firebase.js";
 //I will add comments later
+import {
+  FaPencil,
+
+} from "react-icons/fa6";
+import { useNavigate } from "react-router-dom";
 
 const generator = rough.generator();
+
+const DrawingEditor = () => {
+  
+  const [elements, setElements, undo, redo] = useHistory([]);
+  const [action, setAction] = useState('none'); 
+  const [tool, setTool] = useState("line");
+  const [selectedElement, setSelectedElement] = useState(null);
+  const [stroke,setStroke] = useState(1);
+  const [eraserRadius, setEraserRadius] = useState(10);
+  const navigate = useNavigate();
+  
+
+
+  useEffect(() => {
+    const undoRedoFunction = event => {
+      if ((event.metaKey || event.ctrlKey) && event.key === "z"){
+        if (event.shiftKey){
+          redo();
+        }else{
+          undo();
+        }
+      }
+    };
+    document.addEventListener("keydown", undoRedoFunction);
+    return () =>{
+      document.removeEventListener("keydown",undoRedoFunction);
+    };
+  }, [undo, redo]);
+
+  const drawingId = auth.currentUser?.uid || "anonymous";
+  useEffect(() => {
+    if (!auth.currentUser) return;
+
+    const id = auth.currentUser.uid;
+    (async () => {
+    try {
+      
+      const data = await loadDrawing(id);
+      if (data?.elements) {
+        setElements(data.elements, true);
+      }
+      
+    } catch (err) {
+      console.error("loadDrawing failed:", err);
+    }
+  })();
+}, [setElements]);
+
+
+
+  useLayoutEffect(() => {
+    const canvas = document.getElementById("canvas");
+    const context = canvas.getContext("2d");
+    context.clearRect(0,0, canvas.width, canvas.height);
+    const roughCanvas = rough.canvas(canvas);
+    elements
+    .filter(el => !el.erased)
+    .forEach(el => drawElement(roughCanvas, context, el, stroke));
+    
+  }, [elements,stroke]);
+
+  const updateElement = (id, x1,y1,x2,y2,type) => {
+    const elementsCopy = [...elements];
+    switch(type){
+        case "line":
+        case "rectangle":
+          elementsCopy[id] = CreateElement(id, x1, y1, x2,y2,type,stroke);
+          
+          break;
+          case "pencil":
+            elementsCopy[id].points = [...elementsCopy[id].points, {x: x2, y:y2 }];
+            break;
+          default: 
+            throw new Error(`Type not recognised:${type} `)
+    }
+    setElements(elementsCopy, true);
+
+
+  }
+
+  const handleSave = async () => {
+    const element = elements.map(el => {
+      const base = {
+        id:          el.id,
+        x1:          el.x1,
+        y1:          el.y1,
+        x2:          el.x2,
+        y2:          el.y2,
+        type:        el.type,
+        strokeWidth: el.strokeWidth,
+      };
+      if (el.points) base.points = el.points;
+      if (el.erased !== undefined) base.erased = el.erased;
+      
+      return base;
+    });
+    await saveDrawing(drawingId, element);
+  };
+
+  const handleLoad = async () => {
+    const data = await loadDrawing(drawingId);
+    if (!data?.elements) {
+      alert("No saved drawing found.");
+      return;
+    }
+    const restored = data.elements.map(el => {
+      if (el.type === "line" || el.type === "rectangle") {
+        // these recreate the roughElement internally
+        return CreateElement(
+          el.id, el.x1, el.y1, el.x2, el.y2, el.type, el.strokeWidth
+        );
+      }
+      if (el.type === "pencil") {
+        // pencil strokes only need points + width
+        return { ...el };
+      }
+      return el;
+      
+  });
+  setElements(restored, /* overwrite= */ true);
+}
+
+  const handleMouseDown = (event) =>{
+    const {clientX,clientY } = event;
+      if (tool === "eraser") {
+      setAction("erasing");
+      setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
+      return;
+  }
+    if (tool == "Selection"){
+      //if on element 
+      const element = getElementAtPosition(clientX,clientY,elements);
+      if (element){
+        const offsetX = clientX - element.x1;
+        const offsetY = clientY - element.y1;
+        setSelectedElement({...element, offsetX, offsetY});
+        setElements(prevState => prevState);
+
+        if (element.position === "inside"){
+          setAction("moving");
+        } else {
+          setAction("resizing");
+        }
+        
+      }
+    
+    }
+    
+    
+    else{
+    const id = elements.length;
+    const element = CreateElement(id, clientX,clientY,clientX,clientY, tool,stroke);
+    setElements(prevState =>[...prevState,element]);
+
+    setAction("drawing");
+    }
+
+  };
+
+
+
+  const handleMouseMove = (event) =>{
+    const{clientX, clientY} = event;
+    if (tool == "Selection"){
+      const element = getElementAtPosition(clientX,clientY,elements);
+      event.target.style.cursor = element
+      ? cursorForPosition(element.position)
+      : "default";
+      
+    }
+   
+      if (action === "erasing") {
+        setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
+      }
+    
+    
+    
+
+    if (action == "drawing"){
+    const index = elements.length - 1;
+    const {x1,y1} = elements[index];
+    updateElement(index,x1,y1,clientX,clientY,tool);
+    }else if (action ==="moving"){
+      const{id,x1,x2,y1,y2,type, offsetX, offsetY}  = selectedElement;
+      const width = x2-x1;
+      const height = y2-y1;
+      const newx1 = clientX - offsetX;
+      const newy1 = clientY - offsetY;
+      updateElement(id,newx1,newy1,newx1+width,newy1+ height,type)
+    } else if (action === "resizing"){
+      const {id,type, position, ...coordinates} = selectedElement;
+      const {x1,y1,x2,y2} = resizedCoordinates(clientX, clientY, position, coordinates);
+      updateElement(id, x1, y1,x2, y2, type);
+
+    }
+  };
+
+
+
+
+  const handleMouseUp = (event) =>{
+    if (selectedElement){
+    const index = elements.length -1;
+    const {id, type} = elements[index];
+    if ((action === "drawing" || action === "resizing") && adjustmentRequired(type)){
+
+      const {x1,y1,x2,y2} =  adjustElementCoordinates(elements[index]);
+      updateElement(id, x1, y1,x2,y2,type);
+    }
+  }
+    setAction("none");
+    setSelectedElement(null);
+  };
+
+  const SwitchToDrawingEditor = () => {
+    navigate("/home")
+  };
+
+
+  return(
+  <div>
+    <button onClick={SwitchToDrawingEditor} className="toolbar-button">
+    <FaPencil/>
+    </button>
+    
+    <button onClick={handleSave}>Save</button>
+    <button onClick={handleLoad}>Load</button>
+    <div style ={{position: "fixed"}}>
+    <input 
+    type ="radio"
+    id = "Line"
+    checked={tool =="line"}
+    onChange={() => setTool("line")}
+    />
+    < label htmlFor ="Line">Line</label>
+
+    <input 
+    type ="radio"
+    id = "Selection"
+    checked={tool =="Selection"}
+    onChange={() => setTool("Selection")}
+    />
+    < label htmlFor ="Selection">Selection</label>
+    <input
+    type="radio"
+    id="rectangle"
+    checked={tool =="rectangle"}
+    onChange={()=>setTool("rectangle")}
+    />
+    < label htmlFor ="rectangle">rectangle</label>
+
+   
+    <input
+    type="radio"
+    id="pencil"
+    checked={tool =="pencil"}
+    onChange={()=>setTool("pencil")}
+    />
+    < label htmlFor ="pencil">Pencil</label>
+
+    <input
+    type="radio"
+    id="eraser"
+    checked={tool =="eraser"}
+    onChange={()=>setTool("eraser")}
+    />
+    < label htmlFor ="eraser">Eraser</label>
+
+
+    <div>
+
+    <label>
+    Eraser size
+    <input
+    type="range"
+    min="5"
+    max="50"
+    value={eraserRadius}
+    onChange={e => setEraserRadius(e.target.value)}
+    />
+</label>
+<label htmlFor="brushStroke">brush Stroke</label>
+    <input type="range" id="brushStroke" name="brushStroke" min="1" max="50"   onChange={(e) => setStroke(Number(e.target.value))}/>
+
+  </div>
+
+
+
+    </div>
+
+    <div style ={{position: "fixed", bottom: 10}}>
+      <br></br>
+      <button onClick={undo}>Undo</button>
+      <button onClick={redo}>Redo</button>
+    </div>
+
+
+
+
+    <canvas id = "canvas" 
+  width = {window.innerWidth}
+  height = {window.innerHeight}
+  onMouseDown={handleMouseDown}
+  onMouseMove={handleMouseMove}
+  onMouseUp={handleMouseUp}
+  >
+
+  </canvas>
+
+    
+  </div>
+  
+);};
 
 function CreateElement(id,x1,y1, x2, y2, type,strokeSize){
 
@@ -192,246 +511,9 @@ function eraseAt(elements, x, y, radius) {
 }
 
 
+
 const adjustmentRequired = type => ['line', 'rectangle'].includes(type);
 
 
-const DrawingEditor = () => {
-  
-  const [elements, setElements, undo, redo] = useHistory([]);
-  const [action, setAction] = useState('none'); 
-  const [tool, setTool] = useState("line");
-  const [selectedElement, setSelectedElement] = useState(null);
-  const [stroke,setStroke] = useState(1);
-  const [eraserRadius, setEraserRadius] = useState(10);
 
-
-
-  useEffect(() => {
-    const undoRedoFunction = event => {
-      if ((event.metaKey || event.ctrlKey) && event.key === "z"){
-        if (event.shiftKey){
-          redo();
-        }else{
-          undo();
-        }
-      }
-    };
-    document.addEventListener("keydown", undoRedoFunction);
-    return () =>{
-      document.removeEventListener("keydown",undoRedoFunction);
-    };
-  }, [undo, redo]);
-
-  useLayoutEffect(() => {
-    const canvas = document.getElementById("canvas");
-    const context = canvas.getContext("2d");
-    context.clearRect(0,0, canvas.width, canvas.height);
-    const roughCanvas = rough.canvas(canvas);
-    elements
-    .filter(el => !el.erased)
-    .forEach(el => drawElement(roughCanvas, context, el, stroke));
-    
-  }, [elements,stroke]);
-
-  const updateElement = (id, x1,y1,x2,y2,type) => {
-    const elementsCopy = [...elements];
-    switch(type){
-        case "line":
-        case "rectangle":
-          elementsCopy[id] = CreateElement(id, x1, y1, x2,y2,type,stroke);
-          
-          break;
-          case "pencil":
-            elementsCopy[id].points = [...elementsCopy[id].points, {x: x2, y:y2 }];
-            break;
-          default: 
-            throw new Error(`Type not recognised:${type} `)
-    }
-    setElements(elementsCopy, true);
-
-
-  }
-
-  const handleMouseDown = (event) =>{
-    const {clientX,clientY } = event;
-      if (tool === "eraser") {
-      setAction("erasing");
-      setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
-      return;
-  }
-    if (tool == "Selection"){
-      //if on element 
-      const element = getElementAtPosition(clientX,clientY,elements);
-      if (element){
-        const offsetX = clientX - element.x1;
-        const offsetY = clientY - element.y1;
-        setSelectedElement({...element, offsetX, offsetY});
-        setElements(prevState => prevState);
-
-        if (element.position === "inside"){
-          setAction("moving");
-        } else {
-          setAction("resizing");
-        }
-        
-      }
-    
-    }
-    
-    
-    else{
-    const id = elements.length;
-    const element = CreateElement(id, clientX,clientY,clientX,clientY, tool,stroke);
-    setElements(prevState =>[...prevState,element]);
-
-    setAction("drawing");
-    }
-
-  };
-
-
-
-  const handleMouseMove = (event) =>{
-    const{clientX, clientY} = event;
-    if (tool == "Selection"){
-      const element = getElementAtPosition(clientX,clientY,elements);
-      event.target.style.cursor = element
-      ? cursorForPosition(element.position)
-      : "default";
-      
-    }
-   
-      if (action === "erasing") {
-        setElements(elms => eraseAt(elms, clientX, clientY, eraserRadius), true);
-      }
-    
-    
-    
-
-    if (action == "drawing"){
-    const index = elements.length - 1;
-    const {x1,y1} = elements[index];
-    updateElement(index,x1,y1,clientX,clientY,tool);
-    }else if (action ==="moving"){
-      const{id,x1,x2,y1,y2,type, offsetX, offsetY}  = selectedElement;
-      const width = x2-x1;
-      const height = y2-y1;
-      const newx1 = clientX - offsetX;
-      const newy1 = clientY - offsetY;
-      updateElement(id,newx1,newy1,newx1+width,newy1+ height,type)
-    } else if (action === "resizing"){
-      const {id,type, position, ...coordinates} = selectedElement;
-      const {x1,y1,x2,y2} = resizedCoordinates(clientX, clientY, position, coordinates);
-      updateElement(id, x1, y1,x2, y2, type);
-
-    }
-  };
-
-
-
-
-  const handleMouseUp = (event) =>{
-    if (selectedElement){
-    const index = elements.length -1;
-    const {id, type} = elements[index];
-    if ((action === "drawing" || action === "resizing") && adjustmentRequired(type)){
-
-      const {x1,y1,x2,y2} =  adjustElementCoordinates(elements[index]);
-      updateElement(id, x1, y1,x2,y2,type);
-    }
-  }
-    setAction("none");
-    setSelectedElement(null);
-  };
-  
-
-
-  return(
-  <div>
-    <div style ={{position: "fixed"}}>
-    <input 
-    type ="radio"
-    id = "Line"
-    checked={tool =="line"}
-    onChange={() => setTool("line")}
-    />
-    < label htmlFor ="Line">Line</label>
-
-    <input 
-    type ="radio"
-    id = "Selection"
-    checked={tool =="Selection"}
-    onChange={() => setTool("Selection")}
-    />
-    < label htmlFor ="Selection">Selection</label>
-    <input
-    type="radio"
-    id="rectangle"
-    checked={tool =="rectangle"}
-    onChange={()=>setTool("rectangle")}
-    />
-    < label htmlFor ="rectangle">rectangle</label>
-
-   
-    <input
-    type="radio"
-    id="pencil"
-    checked={tool =="pencil"}
-    onChange={()=>setTool("pencil")}
-    />
-    < label htmlFor ="pencil">Pencil</label>
-
-    <input
-    type="radio"
-    id="eraser"
-    checked={tool =="eraser"}
-    onChange={()=>setTool("eraser")}
-    />
-    < label htmlFor ="eraser">Eraser</label>
-
-
-    <div>
-
-    <label>
-    Eraser size
-    <input
-    type="range"
-    min="5"
-    max="50"
-    value={eraserRadius}
-    onChange={e => setEraserRadius(e.target.value)}
-    />
-</label>
-<label htmlFor="brushStroke">brush Stroke</label>
-    <input type="range" id="brushStroke" name="brushStroke" min="1" max="50"   onChange={(e) => setStroke(Number(e.target.value))}/>
-
-  </div>
-
-
-
-    </div>
-
-    <div style ={{position: "fixed", bottom: 10}}>
-      <br></br>
-      <button onClick={undo}>Undo</button>
-      <button onClick={redo}>Redo</button>
-    </div>
-
-
-
-
-    <canvas id = "canvas" 
-  width = {window.innerWidth}
-  height = {window.innerHeight}
-  onMouseDown={handleMouseDown}
-  onMouseMove={handleMouseMove}
-  onMouseUp={handleMouseUp}
-  >
-
-  </canvas>
-
-    
-  </div>
-  
-);};
 export default DrawingEditor;
