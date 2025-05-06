@@ -108,14 +108,13 @@ export default function TabsContainer() {
                 <Home
                   onOpenNote={(nid, name) => openNote(i, nid, name)}
                   darkMode={darkMode}
-                  toggleDarkMode={toggleDarkMode}
-                  localOnly={localOnly}
                 />
               )}
               {tab.type === "editor" && (
                 <MainEditor
                   navigateToHome={() => backToHome(tab.id)}
                   id={tab.noteId}
+                  onToggleDarkMode={toggleDarkMode}
                   onOpenNewNote={(noteId, title) =>
                     openNewTab(noteId, title, "editor")
                   }

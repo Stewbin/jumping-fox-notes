@@ -15,6 +15,7 @@ export default function Navbar({
   onToggleLocalOnly,
 }) {
   return (
+    
     <nav className="navbar navbar-expand-md navbar-light bg-light sticky-top">
       <div className="container ">
         <span className="navbar-brand">

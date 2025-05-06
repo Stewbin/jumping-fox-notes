@@ -8,6 +8,7 @@ import { MdFormatListBulleted } from "react-icons/md";
 import { FontFamily } from "@tiptap/extension-font-family";
 import Image from "@tiptap/extension-image";
 import { useNavigate } from "react-router-dom";
+import { FaSun } from "react-icons/fa";
 import {
   FaCircleStop,
   FaMicrophone,
@@ -16,6 +17,7 @@ import {
   FaBold,
   FaItalic,
   FaStrikethrough,
+  FaPencil,
 } from "react-icons/fa6";
 
 import "../styles/Editor.css";
@@ -61,7 +63,14 @@ const ResizableImage = Image.extend({
   },
 });
 
-const Editor = ({ id, navigateToHome, darkMode, onOpenNewNote, localOnly }) => {
+const Editor = ({
+  id,
+  navigateToHome,
+  darkMode,
+  onToggleDarkMode,
+  onOpenNewNote,
+  localOnly,
+}) => {
   const [tags, setTags] = useState([]);
 
   const [note, setNote] = useState(null);
@@ -439,6 +448,9 @@ const Editor = ({ id, navigateToHome, darkMode, onOpenNewNote, localOnly }) => {
   const toggleStrike = () => {
     editor?.chain().focus().toggleStrike().run();
   };
+  const SwitchToDrawingEditor = () => {
+    navigate("/drawingeditor");
+  };
 
   if (!editor) {
     return null;
@@ -452,15 +464,22 @@ const Editor = ({ id, navigateToHome, darkMode, onOpenNewNote, localOnly }) => {
         onFileSave={handleManualSave}
         onFileDelete={handleDeleteNote}
         darkMode={darkMode}
+        onToggleDarkMode={onToggleDarkMode}
         openNewNote={onOpenNewNote}
         navigateToHome={navigateToHome}
         localOnly={localOnly}
       />
       <div
-        className={`continer editor-container ${darkMode ? "dark-mode" : ""}`}
+        className={`container editor-container py-3 ${
+          darkMode ? "bg-dark text-light" : "bg-white text-dark"
+        }`}
       >
         {/* Tool Bar */}
-        <div className="toolbar">
+        <div
+          className={`toolbar mb-2 p-2 rounded ${
+            darkMode ? "bg-secondary" : "bg-light"
+          }`}
+        >
           <input
             type="color"
             onInput={(event) =>
@@ -481,6 +500,11 @@ const Editor = ({ id, navigateToHome, darkMode, onOpenNewNote, localOnly }) => {
           <button onClick={toggleStrike} className="toolbar-button">
             <FaStrikethrough />
           </button>
+
+          <button onClick={SwitchToDrawingEditor} className="toolbar-button">
+            <FaPencil />
+          </button>
+
           <button
             onClick={() => editor.chain().focus().toggleBulletList().run()}
             className={editor.isActive("bulletList") ? "is-active" : ""}

@@ -14,6 +14,7 @@ import {
   updateDoc,
   getDoc,
   connectFirestoreEmulator,
+
 } from "firebase/firestore";
 import { getStorage } from "firebase/storage";
 
@@ -54,3 +55,21 @@ export {
   updateDoc,
   logOut,
 };
+
+export async function saveDrawing(drawingId, rawElements) {
+  await setDoc(doc(db, "drawings", drawingId), {
+    elements: rawElements,
+  });
+}
+
+export async function loadDrawing(drawingId) {
+  const docRef = doc(db, "drawings", drawingId);
+  const docSnap = await (getDoc(docRef));
+  if (docSnap.exists()) {
+    console.log("Stored Drawings:", docSnap.data());
+    return docSnap.data();
+  } else {
+    // docSnap.data() will be undefined in this case
+    console.log("No such Drawing!");
+  }
+}
